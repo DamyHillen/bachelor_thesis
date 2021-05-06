@@ -29,6 +29,8 @@ class ModelLayer:
         self.mu = 0
         self.sigma = 0
 
+    # TODO: Infer current state from observation.
+    # TODO: Propagate the update upwards to the parent layers.
     def update(self, x):
         self.sect_counts.update([self.get_section(x)])
 
@@ -42,6 +44,7 @@ class ModelLayer:
         self.mu = old_mu + (x - old_mu)/n
         self.sigma = np.sqrt(((n-2)/(n-1)) * np.power(old_sigma, 2) + np.power((x - old_mu), 2)/n)
 
+    # TODO: Base prediction on the bins
     def predict(self):
         return np.random.normal(loc=self.mu, scale=self.sigma)
 

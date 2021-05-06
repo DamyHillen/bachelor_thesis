@@ -75,7 +75,7 @@ def plot_simulation(observations, predictions, agent_params):
     plt.show()
 
     # Plotting the agent parameters over time
-    mus, sigmas = zip(*agent_params)
+    mus, sigmas = zip(*agent_params)  # !!! This only worked with a single layer. Now we first need to unpack per layer
     plt.plot(time, mus, color="k", label="Agent μ")
     plt.plot(time, sigmas, color="r", label="Agent σ")
     plt.title("Agent parameters over time")
