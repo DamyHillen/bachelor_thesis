@@ -1,14 +1,14 @@
 from collections import Counter
 import numpy as np
 
-
+# TODO: Make state transitions depend on lower-level layers
 class PerceptiveInferenceAgent:
     def __init__(self, n_sect, sect_size, layer_states):
         self.n_layers = layer_states
         self.model = ModelLayer(n_sect, sect_size, layer_states)
 
-    def update(self, x):
-        self.model.update(x)
+    def update(self, obs, layer_contributions):
+        self.model.update(obs, layer_contributions)
 
     def predict(self):
         return self.model.predict()
@@ -19,59 +19,51 @@ class PerceptiveInferenceAgent:
 
 class ModelLayer:
     def __init__(self, n_sect, sect_size, layer_states=[]):
-        self.n_sect = n_sect
-        self.sect_size = sect_size
-        self.sect_counts = Counter({k: 0 for k in range(n_sect)})
-
         self.parent = ModelLayer(n_sect, sect_size, layer_states[1:]) if len(layer_states) > 1 else None
 
         self.n_states = layer_states[0]
+        self.state_variables = [{"n": 5,
+                                 "mu": 0,
+                                 "sigma": 1} for _ in range(self.n_states)]
+        self.in_state = 0
 
-        self.n = 3  # Start at n = 3 to avoid division by 0 for sigma
-        self.mu = 0
-        self.sigma = 0
+        # Prior distribution
+        # self.n = 5
+        # self.mu = 0
+        # self.sigma = 1
 
-    # TODO: Propagate the update upwards to the parent layers.
-    def update(self, x):
-        self.sect_counts.update([self.get_section(x)])
+    def update(self, obs, layer_contributions):
+        self.state_variables[self.in_state]["n"] += 1
 
-        self.n += 1
+        old_mu = self.state_variables[self.in_state]["mu"]
+        old_sigma = self.state_variables[self.in_state]["sigma"]
+        n = self.state_variables[self.in_state]["n"]
 
-        old_mu = self.mu
-        old_sigma = self.sigma
-        n = self.n
+        contribution = layer_contributions[0]
+        should_have_been = obs - (layer_contributions[1] if self.parent else 0)
+        error = contribution - should_have_been
 
         # Incrementally update average and standard deviation
-        self.mu = old_mu + (x - old_mu)/n
-        self.sigma = np.sqrt(((n-2)/(n-1)) * np.power(old_sigma, 2) + np.power((x - old_mu), 2)/n)
+        self.state_variables[self.in_state]["mu"] = old_mu + (should_have_been - old_mu) / n
+        self.state_variables[self.in_state]["sigma"] = np.sqrt(((n-2)/(n-1)) * np.power(old_sigma, 2) + np.power((should_have_been- old_mu), 2) / n)
 
         if self.parent:
-            self.parent.update(x)  # TODO: Only propagate prediction error!
+            self.parent.update(obs-self.state_variables[self.in_state]["mu"], layer_contributions[1:])
 
-    # TODO: Infer current state from observation? Maybe just have a non-deterministic time transition.
-    # Prediction = sampling
-    def predict(self):
-        return np.random.normal(loc=self.mu, scale=self.sigma)
+    def predict(self, prediction=None):
+        self.in_state = (self.in_state + 1) % self.n_states
 
-    def get_section(self, x):
-        sect_nr = 0
-        while sect_nr < self.n_sect:
-            boundary = self.mu - self.sect_size * ((self.n_sect - 2) / 2 - sect_nr)
-            if x < boundary:
-                return sect_nr
-            sect_nr += 1
-        return sect_nr - 1
+        if not prediction:
+            prediction = {"layer_contributions": [], "value": 0}
+        layer_contribution = np.random.normal(loc=self.state_variables[self.in_state]["mu"],
+                                              scale=self.state_variables[self.in_state]["sigma"])
+        prediction["layer_contributions"].append(layer_contribution)
+        prediction["value"] += layer_contribution
 
-    def get_boundaries(self):
-        return [self.mu - self.sect_size * ((self.n_sect - 2) / 2 - sect_nr) for sect_nr in range(self.n_sect)]
+        if self.parent:
+            self.parent.predict(prediction)
 
-    def get_counts(self):
-        return dict(self.sect_counts)
-
-    def get_probs(self):
-        return {k: v / sum(self.sect_counts.values()) for k, v in self.sect_counts.items()}
+        return prediction
 
     def get_params(self):
-        if self.parent:
-            return [(self.mu, self.sigma)]+ self.parent.get_params()
-        return [(self.mu, self.sigma)]
+        return [self.state_variables] + (self.parent.get_params() if self.parent else [])
