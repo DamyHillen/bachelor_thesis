@@ -68,7 +68,7 @@ def plot_simulation(observations, predictions, agent_params):
                       predictions[-YEAR_LEN:], "predictions",
                       "Last year generated VS predicted temperatures")
 
-    # plot_agent_params(time, agent_params)
+    plot_agent_params(time, agent_params)
 
 
 def plot_temperatures(time, obs, obs_label, pred, pred_label, title):
@@ -83,13 +83,19 @@ def plot_temperatures(time, obs, obs_label, pred, pred_label, title):
 
 # TODO: Fix for multiple layers
 def plot_agent_params(time, agent_params):
-    mus, sigmas = zip(*agent_params)  # !!! This only worked with a single layer. Now we first need to unpack per layer
-    plt.plot(time, mus, color="k", label="Agent μ")
-    plt.plot(time, sigmas, color="r", label="Agent σ")
-    plt.title("Agent parameters over time")
-    plt.xlabel("Time (iterations)")
-    plt.ylabel("Parameter value")
-    plt.legend()
+    params_per_layer = [l for l in zip(*agent_params)]
+
+    fig, axs = plt.subplots(len(params_per_layer), 1)
+
+    for layer, layer_params in enumerate(params_per_layer):
+        mus, sigmas = zip(*layer_params)
+        axs[layer].plot(time, mus, color="k", label="Agent μ")
+        axs[layer].plot(time, sigmas, color="r", label="Agent σ")
+        axs[layer].set_title("Layer {}".format(layer))
+        plt.xlabel("Time (iterations)")
+        plt.ylabel("Parameter value")
+        plt.legend()
+    fig.suptitle("Agent parameters over time, per layer")
     plt.show()
 
 
