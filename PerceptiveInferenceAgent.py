@@ -29,7 +29,6 @@ class ModelLayer:
         self.mu = 0
         self.sigma = 0
 
-    # TODO: Infer current state from observation.
     # TODO: Propagate the update upwards to the parent layers.
     def update(self, x):
         self.sect_counts.update([self.get_section(x)])
@@ -44,6 +43,10 @@ class ModelLayer:
         self.mu = old_mu + (x - old_mu)/n
         self.sigma = np.sqrt(((n-2)/(n-1)) * np.power(old_sigma, 2) + np.power((x - old_mu), 2)/n)
 
+        if self.parent:
+            self.parent.update(x)  # TODO: Only propagate prediction error or something???
+
+    # TODO: Infer current state from observation.
     # TODO: Base prediction on the bins
     def predict(self):
         return np.random.normal(loc=self.mu, scale=self.sigma)
@@ -69,4 +72,4 @@ class ModelLayer:
     def get_params(self):
         if self.parent:
             return [(self.mu, self.sigma)]+ self.parent.get_params()
-        return [self.mu, self.sigma]
+        return [(self.mu, self.sigma)]
