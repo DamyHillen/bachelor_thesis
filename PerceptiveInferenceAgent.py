@@ -1,10 +1,10 @@
 from collections import Counter
 import numpy as np
 
-# TODO: Make state transitions depend on lower-level layers
+
 class PerceptiveInferenceAgent:
     def __init__(self, layer_states):
-        self.model = ModelLayer(layer_states)
+        self.model = ModelLayer(layer_states=layer_states)
 
     def update(self, obs, layer_contributions):
         self.model.update(obs, layer_contributions)
@@ -17,19 +17,17 @@ class PerceptiveInferenceAgent:
 
 
 class ModelLayer:
-    def __init__(self, layer_states=[]):
-        self.parent = ModelLayer(layer_states[1:]) if len(layer_states) > 1 else None
+    def __init__(self, transition_speed=1, layer_states=[]):
+        self.parent = ModelLayer(transition_speed=layer_states[0],
+                                 layer_states=layer_states[1:]) if len(layer_states) > 1 else None
 
         self.n_states = layer_states[0]
         self.state_variables = [{"n": 5,
                                  "mu": 0,
                                  "sigma": 1} for _ in range(self.n_states)]
         self.in_state = 0
-
-        # Prior distribution
-        # self.n = 5
-        # self.mu = 0
-        # self.sigma = 1
+        self.transition_speed = transition_speed
+        self.state_transition = 0
 
     def update(self, obs, layer_contributions):
         self.state_variables[self.in_state]["n"] += 1
@@ -50,7 +48,9 @@ class ModelLayer:
             self.parent.update(obs-self.state_variables[self.in_state]["mu"], layer_contributions[1:])
 
     def predict(self, prediction=None):
-        self.in_state = (self.in_state + 1) % self.n_states
+        self.state_transition = (self.state_transition + 1) % self.transition_speed
+        if self.state_transition == 0:
+            self.in_state = (self.in_state + 1) % self.n_states
 
         if not prediction:
             prediction = {"layer_contributions": [], "value": 0}

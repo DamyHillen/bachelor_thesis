@@ -10,10 +10,10 @@ DAY_LEN = 5 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*1000
+N_ITER = YEAR_LEN*5000
 
 # Agent parameters
-LAYER_STATES = [50]  # Immediately also determines number of layers
+LAYER_STATES = [5, 10]  # Immediately also determines number of layers
 
 
 def main():
@@ -40,8 +40,8 @@ def main():
 
 def create_process():
     # warming = GenerativeLayer(cycle_time=0, amplitude=0.001, equilibrium=10)
-    year = GenerativeLayer(parent=None, cycle_time=YEAR_LEN, amplitude=15, sigma=2.5)
-    day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=2, sigma=1)
+    year = GenerativeLayer(parent=None, cycle_time=YEAR_LEN, amplitude=20, sigma=2.5, equilibrium=10)
+    day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=1)
     # hour = GenerativeLayer(parent=day, cycle_time=HOUR_LEN, amplitude=0, sigma=0.25)
 
     return day
@@ -57,10 +57,10 @@ def plot_simulation(observations, predictions, agent_params):
     time = list(range(N_ITER))
 
     # Plotting the generated and predicted temperatures
-    plot_temperatures(time,
-                      observations, "observations",
-                      predictions, "predictions",
-                      "Generated VS predicted temperatures")
+    # plot_temperatures(time,
+    #                   observations, "observations",
+    #                   predictions, "predictions",
+    #                   "Generated VS predicted temperatures")
 
     # Plotting the first year of generated and predicted temperatures
     year_time = list(range(YEAR_LEN))
@@ -128,12 +128,19 @@ def plot_states(agent_params):
 
         fig, axs = plt.subplots(1, len(final_params), figsize=(10, 5))
 
+        distributions = [np.random.normal(loc=p["mu"], scale=p["sigma"], size=10000) for p in final_params]
+        lower = min([min(dist) for dist in distributions])
+        upper = max([max(dist) for dist in distributions])
+
         for state, state_params in enumerate(final_params):
-            mu = state_params["mu"]
-            sigma = state_params["sigma"]
-            vals = np.random.normal(loc=mu, scale=sigma, size=10000)
-            axs[state].hist(vals, orientation="horizontal", density=True, color='k', bins=30, range=(-5, 5))
+            axs[state].hist(distributions[state],
+                            orientation="horizontal",
+                            density=True,
+                            color='k',
+                            bins=30,
+                            range=(lower, upper))
             axs[state].set_title("State {}".format(state))
+            axs[state].axhline(distributions[state].mean(), color='r')
         fig.supxlabel("Probability")
         fig.supylabel("Value")
         fig.suptitle("State parameters for layer {}".format(layer))
