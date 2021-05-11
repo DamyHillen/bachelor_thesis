@@ -56,25 +56,30 @@ def plot_simulation(observations, predictions, agent_params):
     time = list(range(N_ITER))
 
     # Plotting the generated and predicted temperatures
-    plt.scatter(time, observations, color="k", s=10, label="observations")
-    plt.scatter(time, predictions, color="r", s=10, label="predictions")
-    plt.title("Generated VS predicted temperatures")
-    plt.xlabel("Time (iterations)")
-    plt.ylabel("Temperature value")
-    plt.legend()
-    plt.show()
+    plot_temperatures(time,
+                      observations, "observations",
+                      predictions, "predictions",
+                      "Generated VS predicted temperatures")
 
-    # Plotting the last year
+    # Plotting the last year of generated and predicted temperatures
     last_year_time = list(range(YEAR_LEN))
-    plt.scatter(last_year_time, observations[-YEAR_LEN:], color="k", s=10, label="observations")
-    plt.scatter(last_year_time, predictions[-YEAR_LEN:], color="r", s=10, label="predictions")
-    plt.title("Last year generated VS predicted temperatures")
-    plt.xlabel("Time (iterations)")
-    plt.ylabel("Temperature value")
-    plt.legend()
-    plt.show()
+    plot_temperatures(last_year_time,
+                      observations[-YEAR_LEN:], "observations",
+                      predictions[-YEAR_LEN:], "predictions",
+                      "Last year generated VS predicted temperatures")
 
     # plot_agent_params(time, agent_params)
+
+
+def plot_temperatures(time, obs, obs_label, pred, pred_label, title):
+    plt.scatter(time, obs, color='k', s=10, label=obs_label)
+    plt.scatter(time, pred, color='r', s=10, label=pred_label)
+    plt.title(title)
+    plt.xlabel("Time (iterations)")
+    plt.ylabel("Temperature value")
+    plt.legend()
+    plt.show()
+
 
 # TODO: Fix for multiple layers
 def plot_agent_params(time, agent_params):
