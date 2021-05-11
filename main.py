@@ -1,6 +1,8 @@
 from PerceptiveInferenceAgent import PerceptiveInferenceAgent
 from GenerativeLayer import GenerativeLayer
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 # Process parameters
 HOUR_LEN = 1
@@ -11,8 +13,6 @@ YEAR_LEN = 10 * DAY_LEN
 N_ITER = YEAR_LEN*1000
 
 # Agent parameters
-N_SECT = 15
-SECT_SIZE = 1
 LAYER_STATES = [50]  # Immediately also determines number of layers
 
 
@@ -48,7 +48,7 @@ def create_process():
 
 
 def create_agent():
-    agent = PerceptiveInferenceAgent(n_sect=N_SECT, sect_size=SECT_SIZE, layer_states=LAYER_STATES)
+    agent = PerceptiveInferenceAgent(layer_states=LAYER_STATES)
     return agent
 
 
@@ -77,6 +77,8 @@ def plot_simulation(observations, predictions, agent_params):
 
     # TODO: Make this work for multi-layer, multi-state parameters
     # plot_agent_params(time, agent_params)
+
+    plot_states(agent_params)
 
 
 def plot_temperatures(time, obs, obs_label, pred, pred_label, title):
@@ -117,6 +119,26 @@ def plot_agent_params(time, agent_params):
         plt.legend()
         plt.show()
 
+
+def plot_states(agent_params):
+    params_per_layer = [l for l in zip(*agent_params)]
+
+    for layer, params in enumerate(params_per_layer):
+        final_params = params[-1]
+
+        fig, axs = plt.subplots(1, len(final_params), figsize=(10, 5))
+
+        for state, state_params in enumerate(final_params):
+            mu = state_params["mu"]
+            sigma = state_params["sigma"]
+            vals = np.random.normal(loc=mu, scale=sigma, size=10000)
+            axs[state].hist(vals, orientation="horizontal", density=True, color='k', bins=30, range=(-5, 5))
+            axs[state].set_title("State {}".format(state))
+        fig.supxlabel("Probability")
+        fig.supylabel("Value")
+        fig.suptitle("State parameters for layer {}".format(layer))
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":

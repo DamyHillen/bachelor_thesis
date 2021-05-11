@@ -3,9 +3,8 @@ import numpy as np
 
 # TODO: Make state transitions depend on lower-level layers
 class PerceptiveInferenceAgent:
-    def __init__(self, n_sect, sect_size, layer_states):
-        self.n_layers = layer_states
-        self.model = ModelLayer(n_sect, sect_size, layer_states)
+    def __init__(self, layer_states):
+        self.model = ModelLayer(layer_states)
 
     def update(self, obs, layer_contributions):
         self.model.update(obs, layer_contributions)
@@ -18,8 +17,8 @@ class PerceptiveInferenceAgent:
 
 
 class ModelLayer:
-    def __init__(self, n_sect, sect_size, layer_states=[]):
-        self.parent = ModelLayer(n_sect, sect_size, layer_states[1:]) if len(layer_states) > 1 else None
+    def __init__(self, layer_states=[]):
+        self.parent = ModelLayer(layer_states[1:]) if len(layer_states) > 1 else None
 
         self.n_states = layer_states[0]
         self.state_variables = [{"n": 5,
