@@ -3,9 +3,9 @@ import numpy as np
 
 
 class PerceptiveInferenceAgent:
-    def __init__(self, n_sect, sect_size, n_layers):
-        self.n_layers = n_layers
-        self.model = ModelLayer(n_sect, sect_size, n_layers)
+    def __init__(self, n_sect, sect_size, layer_states):
+        self.n_layers = layer_states
+        self.model = ModelLayer(n_sect, sect_size, layer_states)
 
     def update(self, x):
         self.model.update(x)
@@ -18,12 +18,14 @@ class PerceptiveInferenceAgent:
 
 
 class ModelLayer:
-    def __init__(self, n_sect, sect_size, ancestor_count=0):
+    def __init__(self, n_sect, sect_size, layer_states=[]):
         self.n_sect = n_sect
         self.sect_size = sect_size
         self.sect_counts = Counter({k: 0 for k in range(n_sect)})
 
-        self.parent = ModelLayer(n_sect, sect_size, ancestor_count-1) if ancestor_count > 1 else None
+        self.parent = ModelLayer(n_sect, sect_size, layer_states[1:]) if len(layer_states) > 1 else None
+
+        self.n_states = layer_states[0]
 
         self.n = 3  # Start at n = 3 to avoid division by 0 for sigma
         self.mu = 0
@@ -44,10 +46,10 @@ class ModelLayer:
         self.sigma = np.sqrt(((n-2)/(n-1)) * np.power(old_sigma, 2) + np.power((x - old_mu), 2)/n)
 
         if self.parent:
-            self.parent.update(x)  # TODO: Only propagate prediction error or something???
+            self.parent.update(x)  # TODO: Only propagate prediction error!
 
-    # TODO: Infer current state from observation.
-    # TODO: Base prediction on the bins
+    # TODO: Infer current state from observation? Maybe just have a non-deterministic time transition.
+    # Prediction = sampling
     def predict(self):
         return np.random.normal(loc=self.mu, scale=self.sigma)
 

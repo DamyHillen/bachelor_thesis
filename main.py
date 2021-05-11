@@ -7,13 +7,13 @@ N_ITER = 1000
 
 # Process parameters
 HOUR_LEN = 1
-DAY_LEN = 9 * HOUR_LEN
-YEAR_LEN = 9 * DAY_LEN
+DAY_LEN = 5 * HOUR_LEN
+YEAR_LEN = 5 * DAY_LEN
 
 # Agent parameters
 N_SECT = 15
 SECT_SIZE = 1
-N_LAYERS = 3
+LAYER_STATES = [1, 5, 5]  # Immediately also determines number of layers
 
 
 def main():
@@ -47,7 +47,7 @@ def create_process():
 
 
 def create_agent():
-    agent = PerceptiveInferenceAgent(n_sect=N_SECT, sect_size=SECT_SIZE, n_layers=N_LAYERS)
+    agent = PerceptiveInferenceAgent(n_sect=N_SECT, sect_size=SECT_SIZE, layer_states=LAYER_STATES)
     return agent
 
 
@@ -85,17 +85,18 @@ def plot_temperatures(time, obs, obs_label, pred, pred_label, title):
 def plot_agent_params(time, agent_params):
     params_per_layer = [l for l in zip(*agent_params)]
 
-    fig, axs = plt.subplots(len(params_per_layer), 1)
+    fig, axs = plt.subplots(len(params_per_layer), 1, figsize=(10, len(params_per_layer)*2.5))
 
     for layer, layer_params in enumerate(params_per_layer):
         mus, sigmas = zip(*layer_params)
         axs[layer].plot(time, mus, color="k", label="Agent μ")
         axs[layer].plot(time, sigmas, color="r", label="Agent σ")
-        axs[layer].set_title("Layer {}".format(layer))
-        plt.xlabel("Time (iterations)")
-        plt.ylabel("Parameter value")
-        plt.legend()
+        axs[layer].set_title("Layer {} ({} state(s))".format(layer, LAYER_STATES[layer]))
+        axs[layer].legend()
+    fig.supxlabel("Time (iterations)")
+    fig.supylabel("Parameter value")
     fig.suptitle("Agent parameters over time, per layer")
+    plt.tight_layout()
     plt.show()
 
 
