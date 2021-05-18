@@ -2,18 +2,20 @@ from PerceptiveInferenceAgent import PerceptiveInferenceAgent
 from GenerativeLayer import GenerativeLayer
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
+import os
 
 
 # Process parameters
 HOUR_LEN = 1
-DAY_LEN = 5 * HOUR_LEN
+DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
 N_ITER = YEAR_LEN*5000
 
 # Agent parameters
-LAYER_STATES = [5, 10]  # Immediately also determines number of layers
+LAYER_STATES = [10, 10]  # Immediately also determines number of layers
 
 
 def main():
@@ -35,6 +37,10 @@ def main():
         predictions.append(prediction["value"])
         agent_params.append(agent.get_model_params())
 
+    # Store results to disk (results/dd-mm-yy_hh:mm:ss.txt)
+    store_results(observations, predictions, agent_params)
+
+    # Plot the results
     plot_simulation(observations, predictions, agent_params)
 
 
@@ -50,6 +56,20 @@ def create_process():
 def create_agent():
     agent = PerceptiveInferenceAgent(layer_states=LAYER_STATES)
     return agent
+
+
+def store_results(observations, predictions, agent_params):
+    if not os.path.isdir("results"):
+        os.mkdir("results")
+
+    file = open(datetime.datetime.now().strftime("results/%d-%m-%y_%H:%M:%S.txt"), "w")
+    file.write("HOUR_LEN, DAY_LEN, YEAR_LEN: {}\n".format(repr([HOUR_LEN, DAY_LEN, YEAR_LEN])))
+    file.write("N_ITER: {}\n".format(N_ITER))
+    file.write("LAYER_STATES: {}\n".format(repr(LAYER_STATES)))
+    file.write("observations: {}\n".format(repr(observations)))
+    file.write("predictions: {}\n".format(repr(predictions)))
+    file.write("agent_params: {}\n".format(repr(agent_params)))
+    file.close()
 
 
 def plot_simulation(observations, predictions, agent_params):
@@ -75,9 +95,6 @@ def plot_simulation(observations, predictions, agent_params):
                       predictions[-YEAR_LEN:], "predictions",
                       "Last year generated VS predicted temperatures")
 
-    # TODO: Make this work for multi-layer, multi-state parameters
-    # plot_agent_params(time, agent_params)
-
     plot_states(agent_params)
 
 
@@ -89,35 +106,6 @@ def plot_temperatures(time, obs, obs_label, pred, pred_label, title):
     plt.ylabel("Temperature value")
     plt.legend()
     plt.show()
-
-
-# TODO: Fix for multiple layers
-def plot_agent_params(time, agent_params):
-    params_per_layer = [l for l in zip(*agent_params)]
-
-    if len(params_per_layer) > 1:
-        fig, axs = plt.subplots(len(params_per_layer), 1, figsize=(10, len(params_per_layer)*2.5))
-
-        for layer, layer_params in enumerate(params_per_layer):
-            mus, sigmas = zip(*layer_params)
-            axs[layer].plot(time, mus, color="k", label="Agent μ")
-            axs[layer].plot(time, sigmas, color="r", label="Agent σ")
-            axs[layer].set_title("Layer {} ({} state(s))".format(layer, LAYER_STATES[layer]))
-            axs[layer].legend()
-        fig.supxlabel("Time (iterations)")
-        fig.supylabel("Parameter value")
-        fig.suptitle("Agent parameters over time, per layer")
-        plt.tight_layout()
-        plt.show()
-    else:
-        mus, sigmas = zip(*params_per_layer[0])
-        plt.plot(time, mus, color="k", label="Agent μ")
-        plt.plot(time, sigmas, color="r", label="Agent σ")
-        plt.title("Agent parameters over time")
-        plt.xlabel("Time (iterations)")
-        plt.ylabel("Parameter value")
-        plt.legend()
-        plt.show()
 
 
 def plot_states(agent_params):
