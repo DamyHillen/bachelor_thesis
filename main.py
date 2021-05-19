@@ -3,7 +3,12 @@ from GenerativeLayer import GenerativeLayer
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
+import pickle
+import sys
 import os
+
+
+COMMAND_LINE = sys.argv[0] == "main.py"
 
 
 # Process parameters
@@ -37,11 +42,17 @@ def main():
         predictions.append(prediction["value"])
         agent_params.append(agent.get_model_params())
 
+        if t % (N_ITER/10) == 0:
+            print("{:.0f}% done".format(t // (N_ITER/100)))
+
+    print("100% done")
+
     # Store results to disk (results/dd-mm-yy_hh:mm:ss.txt)
     store_results(observations, predictions, agent_params)
 
     # Plot the results
-    plot_simulation(observations, predictions, agent_params)
+    if not COMMAND_LINE:
+        plot_simulation(observations, predictions, agent_params)
 
 
 def create_process():
@@ -59,20 +70,21 @@ def create_agent():
 
 
 def store_results(observations, predictions, agent_params):
+    print("Storing results...")
+
     if not os.path.isdir("results"):
         os.mkdir("results")
 
-    file = open(datetime.datetime.now().strftime("results/%d-%m-%y_%H:%M:%S.txt"), "w")
-    file.write("HOUR_LEN, DAY_LEN, YEAR_LEN: {}\n".format(repr([HOUR_LEN, DAY_LEN, YEAR_LEN])))
-    file.write("N_ITER: {}\n".format(N_ITER))
-    file.write("LAYER_STATES: {}\n".format(repr(LAYER_STATES)))
-    file.write("observations: {}\n".format(repr(observations)))
-    file.write("predictions: {}\n".format(repr(predictions)))
-    file.write("agent_params: {}\n".format(repr(agent_params)))
+    file = open(datetime.datetime.now().strftime("results/%d-%m-%y_%H:%M:%S::%f.results"), "wb")
+    pickle.dump((HOUR_LEN, DAY_LEN, YEAR_LEN, N_ITER, LAYER_STATES, observations, predictions, agent_params), file)
     file.close()
+
+    print("Done!")
 
 
 def plot_simulation(observations, predictions, agent_params):
+    print("Generating plots...")
+
     # General time vector
     time = list(range(N_ITER))
 
@@ -96,6 +108,8 @@ def plot_simulation(observations, predictions, agent_params):
                       "Last year generated VS predicted temperatures")
 
     plot_states(agent_params)
+
+    print("Done!")
 
 
 def plot_temperatures(time, obs, obs_label, pred, pred_label, title):

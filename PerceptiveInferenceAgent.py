@@ -1,4 +1,3 @@
-from collections import Counter
 import numpy as np
 
 
@@ -65,4 +64,4 @@ class ModelLayer:
         return prediction
 
     def get_params(self):
-        return [self.state_variables] + (self.parent.get_params() if self.parent else [])
+        return [[vars.copy() for vars in self.state_variables]] + (self.parent.get_params() if self.parent else [])
