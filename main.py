@@ -17,7 +17,7 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*10
+N_ITER = YEAR_LEN*1
 
 # Agent parameters
 LAYER_STATES = [10, 10]  # Immediately also determines number of layers
@@ -28,17 +28,17 @@ def main():
     process = create_process()
     agent = create_agent()
 
-    observations = []
+    generated_temps = []
     predictions = []
     agent_params = []
 
     # Simulation loop
     for t in range(N_ITER):
-        observation = process.sample(t)
+        generated_temp = process.sample(t)
         prediction = agent.predict()
-        agent.update(observation[0]["value"], prediction["layer_contributions"])
+        agent.update(generated_temp[0][0]["value"], prediction["layer_contributions"])
 
-        observations.append(observation)
+        generated_temps.append(generated_temp)
         predictions.append(prediction["value"])
         agent_params.append(agent.get_model_params())
 
@@ -49,11 +49,11 @@ def main():
     print("100% done")
 
     # Store results to disk (results/dd-mm-yy_hh:mm:ss.txt)
-    store_results(observations, predictions, agent_params)
+    store_results(generated_temps, predictions, agent_params)
 
     # Plot the results
     if not COMMAND_LINE:
-        plot_simulation(observations, predictions, agent_params)
+        plot_simulation(generated_temps, predictions, agent_params)
 
 
 def create_process():
@@ -83,10 +83,10 @@ def store_results(observations, predictions, agent_params):
     print("Done!")
 
 
-def plot_simulation(observations, predictions, agent_params):
+def plot_simulation(generated_temps, predictions, agent_params):
     print("Generating plots...")
 
-    observations = [o[0]["value"] for o in observations]
+    observations = [o[0][0]["value"] for o in generated_temps]
 
     # General time vector
     time = list(range(N_ITER))

@@ -24,7 +24,7 @@ class ModelLayer:
         self.state_variables = [{"n": 5,
                                  "mu": 0,
                                  "sigma": 1} for _ in range(self.n_states)]
-        self.in_state = 0
+        self.in_state = -1
         self.transition_speed = transition_speed
         self.state_transition = 0
 

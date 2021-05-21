@@ -5,60 +5,41 @@ import pickle
 import sys
 
 
-filename = "results/20-05-21_14:49:50::536230.results"
+filename = "results/21-05-21_14:49:42::986952.results"
 
 print("Loading results from '{}'...".format(filename))
 file = open(sys.argv[0] if len(sys.argv) > 1 else filename, "rb")
-HOUR_LEN, DAY_LEN, YEAR_LEN, N_ITER, LAYER_STATES, observations, predictions, agent_params = pickle.load(file)
+HOUR_LEN, DAY_LEN, YEAR_LEN, N_ITER, LAYER_STATES, generated_temps, predictions, agent_params = pickle.load(file)
 print("Done!")
 
-
+# TODO: Make sure the agent's states are aligned properly with those of the generative process
 def main():
-    # MSEs = [MSE(predictions[t], gen_prediction_dist(agent_params[t], t)) for t in range(N_ITER)]
-    mu_MSEs = [MSE(predictions[t], get_mu(agent_params[t], t)) for t in range(N_ITER)]
-
-    window = 50
-
-    avg = np.convolve(mu_MSEs, np.ones(window), 'valid') / window
+    KLs0, KLs1 = zip(*[(KLDiv_normal(generated_temps[t][1][0], get_params(agent_params, t)[0]),
+                       KLDiv_normal(generated_temps[t][1][1], get_params(agent_params, t)[1]))
+                     for t in range(N_ITER)])
     time = np.arange(0, N_ITER)/YEAR_LEN
-    print("100% done")
 
-    sns.scatterplot(x=time, y=mu_MSEs, color="black")
-    sns.lineplot(x=time[window-1:], y=avg, color="red")
+    sns.scatterplot(x=time, y=KLs1, color="blue", label="Layer 1")
+    sns.scatterplot(x=time, y=KLs0, color="red", label="Layer 0")
+    plt.title("KL Divergence of the generative process and generative model")
+    plt.xlabel("Time (years)")
+    plt.ylabel("KL Divergence")
     plt.show()
 
     print("Done!")
 
 
-def get_mu(params, t):
-    if t % (N_ITER / 10) == 0:
-        percentage = "{:.0f}".format(t // (N_ITER / 100))
-        print("{}{}% done".format(" " * (3 - len(percentage)), percentage))
-
+def get_params(params, t):
     state0 = (t + 1) % LAYER_STATES[0]
     state1 = ((t + 1) // LAYER_STATES[0]) % LAYER_STATES[1]
-
-    return params[0][state0]["mu"] + params[1][state1]["mu"]
-
-
-def gen_prediction_dist(params, t):
-    if t % (N_ITER / 10) == 0:
-        percentage = "{:.0f}".format(t // (N_ITER / 100))
-        print("{}{}% done".format(" " * (3 - len(percentage)), percentage))
-
-    state0 = (t+1) % LAYER_STATES[0]
-    state1 = ((t+1) // LAYER_STATES[0]) % LAYER_STATES[1]
-    dist = np.random.normal(loc=np.random.normal(loc=params[1][state1]["mu"],
-                                                 scale=params[1][state1]["sigma"])
-                                                     + params[0][state0]["mu"],
-                            scale=params[0][state0]["sigma"],
-                            size=500)
-    return dist
+    return params[t][0][state0], params[t][1][state1]
 
 
-def MSE(x, p):
-    p = np.array(p)  # Ensure p is a numpy array
-    return np.mean(np.power(p - x, 2))
+def KLDiv_normal(params0, params1):
+    mu0, sigma0 = params0["mu"], params0["sigma"]
+    mu1, sigma1 = params1["mu"], params1["sigma"]
+
+    return np.log(sigma1/sigma0) + (np.square(sigma0) + np.square(mu0 - mu1))/(2 * np.square(sigma1)) - 1/2
 
 
 if __name__ == "__main__":
