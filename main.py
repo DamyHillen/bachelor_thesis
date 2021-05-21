@@ -17,7 +17,7 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*5000
+N_ITER = YEAR_LEN*10
 
 # Agent parameters
 LAYER_STATES = [10, 10]  # Immediately also determines number of layers
@@ -38,12 +38,13 @@ def main():
         prediction = agent.predict()
         agent.update(observation[0]["value"], prediction["layer_contributions"])
 
-        observations.append(observation[0]["value"])
+        observations.append(observation)
         predictions.append(prediction["value"])
         agent_params.append(agent.get_model_params())
 
         if t % (N_ITER/10) == 0:
-            print("{:.0f}% done".format(t // (N_ITER/100)))
+            percentage = "{:.0f}".format(t // (N_ITER/100))
+            print("{}{}% done".format(" "*(3 - len(percentage)), percentage))
 
     print("100% done")
 
@@ -84,6 +85,8 @@ def store_results(observations, predictions, agent_params):
 
 def plot_simulation(observations, predictions, agent_params):
     print("Generating plots...")
+
+    observations = [o[0]["value"] for o in observations]
 
     # General time vector
     time = list(range(N_ITER))
