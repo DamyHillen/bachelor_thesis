@@ -17,7 +17,7 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*1
+N_ITER = YEAR_LEN*100
 
 # Agent parameters
 LAYER_STATES = [10, 10]  # Immediately also determines number of layers
@@ -57,7 +57,7 @@ def main():
 
 
 def create_process():
-    # warming = GenerativeLayer(cycle_time=0, amplitude=0.001, equilibrium=10)
+    warming = GenerativeLayer(cycle_time=0, amplitude=0.001, equilibrium=10)
     year = GenerativeLayer(parent=None, cycle_time=YEAR_LEN, amplitude=20, sigma=2.5, equilibrium=10)
     day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=1)
     # hour = GenerativeLayer(parent=day, cycle_time=HOUR_LEN, amplitude=0, sigma=0.25)

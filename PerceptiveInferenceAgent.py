@@ -24,9 +24,10 @@ class ModelLayer:
         self.state_variables = [{"n": 5,
                                  "mu": 0,
                                  "sigma": 1} for _ in range(self.n_states)]
-        self.in_state = -1
+        self.in_state = 0
         self.transition_speed = transition_speed
-        self.state_transition = 0
+        self.state_transition = -1
+        self.first = True
 
     def update(self, obs, layer_contributions):
         self.state_variables[self.in_state]["n"] += 1
@@ -35,9 +36,9 @@ class ModelLayer:
         old_sigma = self.state_variables[self.in_state]["sigma"]
         n = self.state_variables[self.in_state]["n"]
 
-        contribution = layer_contributions[0]
+        # contribution = layer_contributions[0]
         should_have_been = obs - (layer_contributions[1] if self.parent else 0)
-        error = contribution - should_have_been
+        # error = contribution - should_have_been
 
         # Incrementally update average and standard deviation
         self.state_variables[self.in_state]["mu"] = old_mu + (should_have_been - old_mu) / n
@@ -49,12 +50,15 @@ class ModelLayer:
     def predict(self, prediction=None):
         self.state_transition = (self.state_transition + 1) % self.transition_speed
         if self.state_transition == 0:
-            self.in_state = (self.in_state + 1) % self.n_states
+            if self.first:
+                self.first = False
+            else:
+                self.in_state = (self.in_state + 1) % self.n_states
 
         if not prediction:
             prediction = {"layer_contributions": [], "value": 0}
         layer_contribution = np.random.normal(loc=self.state_variables[self.in_state]["mu"],
-                                              scale=self.state_variables[self.in_state]["sigma"])
+                                              scale=0)  #self.state_variables[self.in_state]["sigma"])
         prediction["layer_contributions"].append(layer_contribution)
         prediction["value"] += layer_contribution
 

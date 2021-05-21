@@ -5,7 +5,7 @@ import pickle
 import sys
 
 
-filename = "results/21-05-21_14:49:42::986952.results"
+filename = "results/21-05-21_15:52:26::906897.results"
 
 print("Loading results from '{}'...".format(filename))
 file = open(sys.argv[0] if len(sys.argv) > 1 else filename, "rb")

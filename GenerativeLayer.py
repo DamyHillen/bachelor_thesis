@@ -32,7 +32,7 @@ class GenerativeLayer:
         self.history[t]["value"] = self.new_val(t)
 
         return [self.history[t]] + parent_history[0],\
-               [{"mu": self.amplitude * np.sin((t + self.offset) * 2 * np.pi / self.cycle_time) + (0 if self.parent else self.equilibrium),
+               [{"mu": 0 if self.cycle_time == 0 else self.amplitude * np.sin((t + self.offset) * 2 * np.pi / self.cycle_time) + (0 if self.parent else self.equilibrium),
                  "sigma": self.sigma}] + parent_history[1]
 
     def new_val(self, t):
