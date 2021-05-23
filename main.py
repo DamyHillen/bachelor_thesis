@@ -17,7 +17,7 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*100
+N_ITER = YEAR_LEN*500
 
 # Agent parameters
 LAYER_STATES = [10, 10]  # Immediately also determines number of layers
@@ -56,9 +56,9 @@ def main():
         plot_simulation(generated_temps, predictions, agent_params)
 
 
-def create_process():
-    warming = GenerativeLayer(cycle_time=0, amplitude=0.001, equilibrium=10)
-    year = GenerativeLayer(parent=None, cycle_time=YEAR_LEN, amplitude=20, sigma=2.5, equilibrium=10)
+def create_process(with_warming=False):
+    warming = GenerativeLayer(cycle_time=0, amplitude=0, equilibrium=10)
+    year = GenerativeLayer(parent=warming if with_warming else None, cycle_time=YEAR_LEN, amplitude=20, sigma=2.5, equilibrium=0 if with_warming else 10)
     day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=1)
     # hour = GenerativeLayer(parent=day, cycle_time=HOUR_LEN, amplitude=0, sigma=0.25)
 
@@ -90,12 +90,6 @@ def plot_simulation(generated_temps, predictions, agent_params):
 
     # General time vector
     time = list(range(N_ITER))
-
-    # Plotting the generated and predicted temperatures
-    # plot_temperatures(time,
-    #                   observations, "observations",
-    #                   predictions, "predictions",
-    #                   "Generated VS predicted temperatures")
 
     # Plotting the first year of generated and predicted temperatures
     year_time = list(range(YEAR_LEN))
