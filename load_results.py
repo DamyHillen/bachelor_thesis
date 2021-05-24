@@ -4,7 +4,7 @@ import pickle
 import sys
 
 
-filename = "results/23-05-21_16:48:52::419786.results"
+filename = "results/24-05-21_23:17:32::300953.results"
 
 print("Loading results from '{}'...".format(filename))
 file = open(sys.argv[0] if len(sys.argv) > 1 else filename, "rb")
@@ -13,14 +13,14 @@ print("Done!")
 
 
 def main():
-    calculate_and_plot_divergence(separate=True)
+    # calculate_and_plot_divergence(separate=True)
     plot_simulation()
 
 
 def calculate_and_plot_divergence(separate=False):
     # Get the KL Divergence over time for each layer
     KLs = [l for l in zip(*[[KLDiv_normal(generated_temps[t][1][i], get_params(agent_params, t)[i])
-                             for i in range(len(generated_temps[t][1]))]
+                             for i in range(min(len(generated_temps[t][1]), len(agent_params[0])))]
                             for t in range(N_ITER)])]
 
     # Time array in terms of years for plotting
@@ -110,24 +110,47 @@ def plot_states():
     for layer, params in enumerate(params_per_layer):
         final_params = params[-1]
 
-        fig, axs = plt.subplots(1, len(final_params), figsize=(10, 5))
+        if len(final_params) < 25:
+            distributions = [np.random.normal(loc=p["mu"], scale=p["sigma"], size=10000) for p in final_params]
+            lower = min([min(dist) for dist in distributions])
+            upper = max([max(dist) for dist in distributions])
+            if len(final_params) > 1:
+                fig, axs = plt.subplots(1, len(final_params), figsize=(10, 5))
 
-        distributions = [np.random.normal(loc=p["mu"], scale=p["sigma"], size=10000) for p in final_params]
-        lower = min([min(dist) for dist in distributions])
-        upper = max([max(dist) for dist in distributions])
+                for state, state_params in enumerate(final_params):
+                    axs[state].hist(distributions[state],
+                                    orientation="horizontal",
+                                    density=True,
+                                    color='k',
+                                    bins=30,
+                                    range=(lower, upper))
+                    axs[state].set_title("State {}\nμ = {:.1f}\nσ = {:.1f}".format(state, state_params["mu"], state_params["sigma"]))
+                    axs[state].axhline(distributions[state].mean(), color='r')
+                fig.supxlabel("Probability")
+                fig.supylabel("Value")
+                fig.suptitle("State parameters for layer {}\nProcess: σ = {}".format(layer, generated_temps[-1][1][layer]["sigma"]))
+            else:
+                plt.hist(distributions[0],
+                         orientation="horizontal",
+                         density=True,
+                         color='k',
+                         bins=30,
+                         range=(lower, upper))
+                plt.axhline(distributions[0].mean(), color='r')
+                plt.xlabel("Probability")
+                plt.ylabel("Value")
+                plt.title("State parameters for layer {}\nProcess: σ = {:.1f}\nState: μ = {:.1f},\nσ = {:.1f}"
+                          .format(layer, generated_temps[-1][1][layer]["sigma"], final_params[0]["mu"], final_params[0]["sigma"]))
+        else:
+            xs = range(len(final_params))
+            ys, es = zip(*[(p["mu"], p["sigma"]) for p in final_params])
 
-        for state, state_params in enumerate(final_params):
-            axs[state].hist(distributions[state],
-                            orientation="horizontal",
-                            density=True,
-                            color='k',
-                            bins=30,
-                            range=(lower, upper))
-            axs[state].set_title("State {}\nμ = {:.1f}\nσ = {:.1f}".format(state, state_params["mu"], state_params["sigma"]))
-            axs[state].axhline(distributions[state].mean(), color='r')
-        fig.supxlabel("Probability")
-        fig.supylabel("Value")
-        fig.suptitle("State parameters for layer {}\nProcess: σ = {}".format(layer, generated_temps[-1][1][layer]["sigma"]))
+            err = plt.errorbar(xs, ys, yerr=es, color='k')
+            err[-1][0].set_linestyle("dotted")
+            plt.xlabel("State")
+            plt.ylabel("Value")
+            plt.title("State parameters for layer {} with ±σ as error bars".format(layer))
+
         plt.tight_layout()
         plt.show()
 

@@ -17,7 +17,7 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*5
+N_ITER = YEAR_LEN*500
 
 # Agent parameters
 LAYER_STATES = [10, 10]  # Immediately also determines number of layers
@@ -25,7 +25,7 @@ LAYER_STATES = [10, 10]  # Immediately also determines number of layers
 
 def main():
     # Creating the generative process and perceptive inference agent
-    process = create_process(with_warming=False)
+    process = create_process(with_warming=True)
     agent = create_agent()
 
     # Lists to store the simulated values in
@@ -59,8 +59,10 @@ def main():
 
 def create_process(with_warming=False):
     warming = GenerativeLayer(cycle_time=0, amplitude=0, equilibrium=10)
-    year = GenerativeLayer(parent=warming if with_warming else None, cycle_time=YEAR_LEN, amplitude=20, sigma=2.5, equilibrium=0 if with_warming else 10)
-    day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=1)
+    # year = GenerativeLayer(parent=warming if with_warming else None, cycle_time=YEAR_LEN, amplitude=20, sigma=2.5, equilibrium=0 if with_warming else 10)
+    year = GenerativeLayer(parent=warming if with_warming else None, cycle_time=YEAR_LEN, amplitude=20, sigma=0, equilibrium=0 if with_warming else 10)
+    # day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=1)
+    day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=0)
     # hour = GenerativeLayer(parent=day, cycle_time=HOUR_LEN, amplitude=0, sigma=0.25)
 
     return day
