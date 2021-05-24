@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pickle
 import sys
 
 
-filename = "results/23-05-21_15:36:48::359612.results"
+filename = "results/23-05-21_16:48:52::419786.results"
 
 print("Loading results from '{}'...".format(filename))
 file = open(sys.argv[0] if len(sys.argv) > 1 else filename, "rb")
@@ -14,21 +13,37 @@ print("Done!")
 
 
 def main():
-    calculate_and_plot_divergence()
+    calculate_and_plot_divergence(separate=True)
     plot_simulation()
 
 
-def calculate_and_plot_divergence():
-    KLs = zip(*[[KLDiv_normal(generated_temps[t][1][i], get_params(agent_params, t)[i])
-                 for i in range(len(generated_temps[t][1]))]
-                for t in range(N_ITER)])
+def calculate_and_plot_divergence(separate=False):
+    # Get the KL Divergence over time for each layer
+    KLs = [l for l in zip(*[[KLDiv_normal(generated_temps[t][1][i], get_params(agent_params, t)[i])
+                             for i in range(len(generated_temps[t][1]))]
+                            for t in range(N_ITER)])]
+
+    # Time array in terms of years for plotting
     time = np.arange(0, N_ITER) / YEAR_LEN
 
-    for layer, KL in reversed(list(enumerate(KLs))):
-        sns.lineplot(x=time, y=KL, label="Layer {}".format(layer))
-    plt.title("KL Divergence of the generative process and generative model")
-    plt.xlabel("Time (years)")
-    plt.ylabel("KL Divergence")
+    if separate:
+        fig, axs = plt.subplots(1, len(LAYER_STATES), figsize=(10, 5))
+
+        for layer, KL in enumerate(KLs):
+            # axs[layer].scatter(time, KL, s=1, color='k')
+            axs[layer].plot(time, KL, color='k')
+            axs[layer].set_title("Layer {}".format(layer))
+            axs[layer].set_ylim([0, np.array(KLs).max()])
+        fig.supxlabel("Time (years)")
+        fig.supylabel("KL Divergence")
+        fig.suptitle("KL Divergence of the generative process and generative model")
+    else:
+        for layer, KL in reversed(list(enumerate(KLs))):
+            print(layer)
+            plt.plot(time, KL, label="Layer {}".format(layer))
+        plt.title("KL Divergence of the generative process and generative model")
+        plt.xlabel("Time (years)")
+        plt.ylabel("KL Divergence")
     plt.show()
 
 
@@ -88,7 +103,7 @@ def plot_temperatures(time, obs, obs_label, pred, pred_label, title, func="scatt
     plt.legend()
     plt.show()
 
-
+# TODO: Make this work for layers with a single state!
 def plot_states():
     params_per_layer = [l for l in zip(*agent_params)]
 
@@ -108,11 +123,11 @@ def plot_states():
                             color='k',
                             bins=30,
                             range=(lower, upper))
-            axs[state].set_title("State {}".format(state))
+            axs[state].set_title("State {}\nμ = {:.1f}\nσ = {:.1f}".format(state, state_params["mu"], state_params["sigma"]))
             axs[state].axhline(distributions[state].mean(), color='r')
         fig.supxlabel("Probability")
         fig.supylabel("Value")
-        fig.suptitle("State parameters for layer {}".format(layer))
+        fig.suptitle("State parameters for layer {}\nProcess: σ = {}".format(layer, generated_temps[-1][1][layer]["sigma"]))
         plt.tight_layout()
         plt.show()
 

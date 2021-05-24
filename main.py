@@ -17,7 +17,7 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*500
+N_ITER = YEAR_LEN*5
 
 # Agent parameters
 LAYER_STATES = [10, 10]  # Immediately also determines number of layers
@@ -25,9 +25,10 @@ LAYER_STATES = [10, 10]  # Immediately also determines number of layers
 
 def main():
     # Creating the generative process and perceptive inference agent
-    process = create_process()
+    process = create_process(with_warming=False)
     agent = create_agent()
 
+    # Lists to store the simulated values in
     generated_temps = []
     predictions = []
     agent_params = []
@@ -48,12 +49,12 @@ def main():
 
     print("100% done")
 
-    # Store results to disk (results/dd-mm-yy_hh:mm:ss.txt)
+    # Write results to disk (results/dd-mm-yy_hh:mm:ss.txt)
     store_results(generated_temps, predictions, agent_params)
 
     # Plot the results
-    if not COMMAND_LINE:
-        plot_simulation(generated_temps, predictions, agent_params)
+    # if not COMMAND_LINE:
+    #     plot_simulation(generated_temps, predictions, agent_params)
 
 
 def create_process(with_warming=False):
