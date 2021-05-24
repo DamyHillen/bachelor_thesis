@@ -17,10 +17,10 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*500
+N_ITER = YEAR_LEN*50
 
 # Agent parameters
-LAYER_STATES = [10, 10]  # Immediately also determines number of layers
+LAYER_STATES = [1, 100]  # Immediately also determines number of layers
 
 
 def main():
