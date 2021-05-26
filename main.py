@@ -1,6 +1,7 @@
 from PerceptiveInferenceAgent import PerceptiveInferenceAgent
 from GenerativeLayer import GenerativeLayer
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 import numpy as np
 import datetime
 import pickle
@@ -17,15 +18,15 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*50
+N_ITER = YEAR_LEN*500
 
 # Agent parameters
-LAYER_STATES = [1, 100]  # Immediately also determines number of layers
+LAYER_STATES = [100]  # Immediately also determines number of layers
 
 
 def main():
     # Creating the generative process and perceptive inference agent
-    process = create_process(with_warming=True)
+    process = create_process(with_warming=False)
     agent = create_agent()
 
     # Lists to store the simulated values in
@@ -33,8 +34,10 @@ def main():
     predictions = []
     agent_params = []
 
+    print("Running simulation...", file=sys.stderr)
+
     # Simulation loop
-    for t in range(N_ITER):
+    for t in tqdm(range(N_ITER)):
         generated_temp = process.sample(t)
         prediction = agent.predict()
         agent.update(generated_temp[0][0]["value"], prediction["layer_contributions"])
@@ -42,12 +45,6 @@ def main():
         generated_temps.append(generated_temp)
         predictions.append(prediction["value"])
         agent_params.append(agent.get_model_params())
-
-        if t % (N_ITER/10) == 0:
-            percentage = "{:.0f}".format(t // (N_ITER/100))
-            print("{}{}% done".format(" "*(3 - len(percentage)), percentage))
-
-    print("100% done")
 
     # Write results to disk (results/dd-mm-yy_hh:mm:ss.txt)
     store_results(generated_temps, predictions, agent_params)

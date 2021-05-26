@@ -59,6 +59,7 @@ class ModelLayer:
             prediction = {"layer_contributions": [], "value": 0}
         layer_contribution = np.random.normal(loc=self.state_variables[self.in_state]["mu"],
                                               scale=self.state_variables[self.in_state]["sigma"])
+        # layer_contribution = self.state_variables[self.in_state]["mu"]
         prediction["layer_contributions"].append(layer_contribution)
         prediction["value"] += layer_contribution
 
