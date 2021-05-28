@@ -21,13 +21,13 @@ YEAR_LEN = 10 * DAY_LEN
 N_ITER = YEAR_LEN*500
 
 # Agent parameters
-LAYER_STATES = [100]  # Immediately also determines number of layers
+LAYER_STATES = [10, 10]  # Immediately also determines number of layers
 
 
 def main():
     # Creating the generative process and perceptive inference agent
     process = create_process(with_warming=False)
-    agent = create_agent()
+    agent = create_agent(prior={"n": 5, "mu": 10, "sigma": 1}, only_mu=False)
 
     # Lists to store the simulated values in
     generated_temps = []
@@ -65,8 +65,8 @@ def create_process(with_warming=False):
     return day
 
 
-def create_agent():
-    agent = PerceptiveInferenceAgent(layer_states=LAYER_STATES)
+def create_agent(prior=None, only_mu=False):
+    agent = PerceptiveInferenceAgent(layer_states=LAYER_STATES, prior=prior, only_mu=only_mu)
     return agent
 
 

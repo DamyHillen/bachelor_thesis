@@ -10,7 +10,7 @@ import sys
 import os
 
 
-N_ITER = 2500
+N_ITER = 1000
 IMG_SHAPE = (20, 20)
 
 
@@ -33,14 +33,14 @@ IMG_SHAPE = (20, 20)
 #
 #     store_results(generated_images, predicted_images)
 
-def create_agent():
+def create_agent(prior=None):
     x, y = IMG_SHAPE
     agents = []
 
     for i in range(x):
         row = []
         for j in range(y):
-            row.append(PerceptiveInferenceAgent([200]))
+            row.append(PerceptiveInferenceAgent([200], prior=prior))
         agents.append(row)
 
     return agents
@@ -126,7 +126,7 @@ def store_results(generated_images, predicted_images):
 class SubplotAnimation(animation.TimedAnimation):
     def __init__(self):
         self.progress = tqdm(total=N_ITER)
-        self.agents = create_agent()
+        self.agents = create_agent(prior={"n": 3, "mu": 128, "sigma": 1})
         self.process = create_process()
 
         self.fig = plt.figure()
@@ -164,6 +164,11 @@ class SubplotAnimation(animation.TimedAnimation):
         return iter(range(self.t.size))
 
 
-print("Rendering animation...", file=sys.stderr)
-ani = SubplotAnimation()
-ani.save('results/image_results/vid4.mp4')
+vid_name = "vid5.mp4"
+if not os.path.isfile('results/image_results/{}'.format(vid_name)):
+    print("Rendering animation...", file=sys.stderr)
+    ani = SubplotAnimation()
+    ani.save('results/image_results/{}'.format(vid_name))
+    print("Animation {} saved!".format(vid_name), file=sys.stderr)
+else:
+    print("{} already exists!".format(vid_name), file=sys.stderr)

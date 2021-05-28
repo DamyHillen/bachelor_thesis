@@ -4,7 +4,7 @@ import pickle
 import sys
 
 
-filename = "results/26-05-21_10:34:00::888689.results"
+filename = "results/28-05-21_00:33:26::929967.results"
 
 print("Loading results from '{}'...".format(filename))
 file = open(sys.argv[0] if len(sys.argv) > 1 else filename, "rb")
@@ -128,7 +128,8 @@ def plot_states():
                     axs[state].axhline(distributions[state].mean(), color='r')
                 fig.supxlabel("Probability")
                 fig.supylabel("Value")
-                fig.suptitle("State parameters for layer {}\nProcess: σ = {}".format(layer, generated_temps[-1][1][layer]["sigma"]))
+                mus = [p["mu"] for p in final_params]
+                fig.suptitle("State parameters for layer {}\nequilibrium = {:.1f}, amplitude = {:.1f}".format(layer, sum(mus)/len(final_params), (max(mus) - min(mus))/2))
             else:
                 plt.hist(distributions[0],
                          orientation="horizontal",
@@ -139,8 +140,8 @@ def plot_states():
                 plt.axhline(distributions[0].mean(), color='r')
                 plt.xlabel("Probability")
                 plt.ylabel("Value")
-                plt.title("State parameters for layer {}\nProcess: σ = {:.1f}\nState: μ = {:.1f},\nσ = {:.1f}"
-                          .format(layer, generated_temps[-1][1][layer]["sigma"], final_params[0]["mu"], final_params[0]["sigma"]))
+                plt.title("State parameters for layer {}\nState: μ = {:.1f},\nσ = {:.1f}"
+                          .format(layer, final_params[0]["mu"], final_params[0]["sigma"]))
         else:
             xs = range(len(final_params))
             ys, es = zip(*[(p["mu"], p["sigma"]) for p in final_params])

@@ -2,28 +2,30 @@ import numpy as np
 
 
 class PerceptiveInferenceAgent:
-    def __init__(self, layer_states):
-        self.model = ModelLayer(layer_states=layer_states)
+    def __init__(self, layer_states, prior=None, only_mu=False):
+        self.model = ModelLayer(layer_states=layer_states, prior=prior)
+        self.only_mu = only_mu
 
     def update(self, obs, layer_contributions):
         self.model.update(obs, layer_contributions)
 
     def predict(self):
-        return self.model.predict()
+        return self.model.predict(only_mu=self.only_mu)
 
     def get_model_params(self):
         return self.model.get_params()
 
 
 class ModelLayer:
-    def __init__(self, transition_speed=1, layer_states=[]):
+    def __init__(self, transition_speed=1, layer_states=[], prior=None):
         self.parent = ModelLayer(transition_speed=layer_states[0],
-                                 layer_states=layer_states[1:]) if len(layer_states) > 1 else None
+                                 layer_states=layer_states[1:],
+                                 prior=prior) if len(layer_states) > 1 else None
 
         self.n_states = layer_states[0]
         self.state_variables = [{"n": 5,
                                  "mu": 0,
-                                 "sigma": 1} for _ in range(self.n_states)]
+                                 "sigma": 1} if not prior else prior.copy() for _ in range(self.n_states)]
         self.in_state = 0
         self.transition_speed = transition_speed
         self.state_transition = -1
@@ -47,7 +49,7 @@ class ModelLayer:
         if self.parent:
             self.parent.update(obs-self.state_variables[self.in_state]["mu"], layer_contributions[1:])
 
-    def predict(self, prediction=None):
+    def predict(self, prediction=None, only_mu=False):
         self.state_transition = (self.state_transition + 1) % self.transition_speed
         if self.state_transition == 0:
             if self.first:
@@ -57,14 +59,15 @@ class ModelLayer:
 
         if not prediction:
             prediction = {"layer_contributions": [], "value": 0}
+
         layer_contribution = np.random.normal(loc=self.state_variables[self.in_state]["mu"],
-                                              scale=self.state_variables[self.in_state]["sigma"])
-        # layer_contribution = self.state_variables[self.in_state]["mu"]
+                                              scale=(0 if only_mu else self.state_variables[self.in_state]["sigma"]))
+
         prediction["layer_contributions"].append(layer_contribution)
         prediction["value"] += layer_contribution
 
         if self.parent:
-            self.parent.predict(prediction)
+            self.parent.predict(prediction, only_mu=only_mu)
 
         return prediction
 
