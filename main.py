@@ -1,5 +1,6 @@
 from PerceptiveInferenceAgent import PerceptiveInferenceAgent
 from GenerativeLayer import GenerativeLayer
+from Simulation import Simulation
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
@@ -7,9 +8,6 @@ import datetime
 import pickle
 import sys
 import os
-
-
-COMMAND_LINE = sys.argv[0] == "main.py"
 
 
 # Process parameters
@@ -29,29 +27,15 @@ def main():
     process = create_process(with_warming=False)
     agent = create_agent(prior={"n": 5, "mu": 10, "sigma": 1}, only_mu=False)
 
-    # Lists to store the simulated values in
-    generated_temps = []
-    predictions = []
-    agent_params = []
+    sim = Simulation(1, agent, process, N_ITER)
+    sim.run()
 
-    print("Running simulation...", file=sys.stderr)
-
-    # Simulation loop
-    for t in tqdm(range(N_ITER)):
-        generated_temp = process.sample(t)
-        prediction = agent.predict()
-        agent.update(generated_temp[0][0]["value"], prediction["layer_contributions"])
-
-        generated_temps.append(generated_temp)
-        predictions.append(prediction["value"])
-        agent_params.append(agent.get_model_params())
+    generated_temps = sim.generated_temps
+    predictions = sim.predictions
+    agent_params = sim.agent_params
 
     # Write results to disk (results/dd-mm-yy_hh:mm:ss.txt)
-    store_results(generated_temps, predictions, agent_params)
-
-    # Plot the results
-    # if not COMMAND_LINE:
-    #     plot_simulation(generated_temps, predictions, agent_params)
+    # store_results(generated_temps, predictions, agent_params)
 
 
 def create_process(with_warming=False):
@@ -81,70 +65,6 @@ def store_results(observations, predictions, agent_params):
     file.close()
 
     print("Done!")
-
-
-def plot_simulation(generated_temps, predictions, agent_params):
-    print("Generating plots...")
-
-    observations = [o[0][0]["value"] for o in generated_temps]
-
-    # General time vector
-    time = list(range(N_ITER))
-
-    # Plotting the first year of generated and predicted temperatures
-    year_time = list(range(YEAR_LEN))
-    plot_temperatures(year_time,
-                      observations[:YEAR_LEN], "observations",
-                      predictions[:YEAR_LEN], "predictions",
-                      "First year generated VS predicted temperatures")
-
-    # Plotting the last year of generated and predicted temperatures
-    plot_temperatures(year_time,
-                      observations[-YEAR_LEN:], "observations",
-                      predictions[-YEAR_LEN:], "predictions",
-                      "Last year generated VS predicted temperatures")
-
-    plot_states(agent_params)
-
-    print("Done!")
-
-
-def plot_temperatures(time, obs, obs_label, pred, pred_label, title):
-    plt.scatter(time, obs, color='k', s=10, label=obs_label)
-    plt.scatter(time, pred, color='r', s=10, label=pred_label)
-    plt.title(title)
-    plt.xlabel("Time (iterations)")
-    plt.ylabel("Temperature value")
-    plt.legend()
-    plt.show()
-
-
-def plot_states(agent_params):
-    params_per_layer = [l for l in zip(*agent_params)]
-
-    for layer, params in enumerate(params_per_layer):
-        final_params = params[-1]
-
-        fig, axs = plt.subplots(1, len(final_params), figsize=(10, 5))
-
-        distributions = [np.random.normal(loc=p["mu"], scale=p["sigma"], size=10000) for p in final_params]
-        lower = min([min(dist) for dist in distributions])
-        upper = max([max(dist) for dist in distributions])
-
-        for state, state_params in enumerate(final_params):
-            axs[state].hist(distributions[state],
-                            orientation="horizontal",
-                            density=True,
-                            color='k',
-                            bins=30,
-                            range=(lower, upper))
-            axs[state].set_title("State {}".format(state))
-            axs[state].axhline(distributions[state].mean(), color='r')
-        fig.supxlabel("Probability")
-        fig.supylabel("Value")
-        fig.suptitle("State parameters for layer {}".format(layer))
-        plt.tight_layout()
-        plt.show()
 
 
 if __name__ == "__main__":

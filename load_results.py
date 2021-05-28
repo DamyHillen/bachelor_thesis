@@ -4,7 +4,7 @@ import pickle
 import sys
 
 
-filename = "results/28-05-21_00:33:26::929967.results"
+filename = "results/28-05-21_23:54:39::711410.results"
 
 print("Loading results from '{}'...".format(filename))
 file = open(sys.argv[0] if len(sys.argv) > 1 else filename, "rb")
@@ -14,7 +14,12 @@ print("Done!")
 
 def main():
     # calculate_and_plot_divergence(separate=True)
-    plot_simulation()
+    error = model_error(generated_temps, agent_params)
+    errors = [[e - k for e in error] for k in range(-10, 10)]
+
+    plot_errors(errors)
+
+    # plot_simulation()
 
 
 def calculate_and_plot_divergence(separate=False):
@@ -44,6 +49,22 @@ def calculate_and_plot_divergence(separate=False):
         plt.title("KL Divergence of the generative process and generative model")
         plt.xlabel("Time (years)")
         plt.ylabel("KL Divergence")
+    plt.show()
+
+
+# TODO: Incorporate standard deviation into model error?
+def model_error(gen_temps, params):
+    temps = [t[0][0]["value"] for t in gen_temps]
+    mu_sums = [sum(p["mu"] for p in get_params(params, t)) for t in range(len(params))]
+    model_error = [abs(temps[t] - mu_sums[t]) for t in range(len(temps))]
+    return model_error
+
+
+def plot_errors(errors):
+    for error in errors:
+        plt.plot(np.arange(N_ITER)/YEAR_LEN, error, 'r', alpha=0.01)
+    plt.xlabel("Time (years)")
+    plt.ylabel("Model error")
     plt.show()
 
 
@@ -103,7 +124,7 @@ def plot_temperatures(time, obs, obs_label, pred, pred_label, title, func="scatt
     plt.legend()
     plt.show()
 
-# TODO: Make this work for layers with a single state!
+
 def plot_states():
     params_per_layer = [l for l in zip(*agent_params)]
 
