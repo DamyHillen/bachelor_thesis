@@ -14,25 +14,6 @@ N_ITER = 1000
 IMG_SHAPE = (20, 20)
 
 
-# def main():
-#     agents = create_agent()
-#     process = create_process()
-#
-#     generated_images = []
-#     predicted_images = []
-#     for t in tqdm(range(N_ITER)):
-#         generated_image = sample_image(process, t)
-#         predicted_image = predict_image(agents)
-#         update_agents(agents, generated_image, predicted_image)
-#
-#         if t < 10 or t > N_ITER - 10:
-#             show_images(generated_image, predicted_image)
-#
-#         generated_images.append(generated_image)
-#         predicted_images.append(predicted_image)
-#
-#     store_results(generated_images, predicted_images)
-
 def create_agent(prior=None):
     x, y = IMG_SHAPE
     agents = []

@@ -1,22 +1,21 @@
 from matplotlib.pyplot import Line2D
 import matplotlib.pyplot as plt
-from Results import Results
+from Results import *
 import numpy as np
-import math
-
 
 
 def main():
     # calculate_and_plot_divergence(separate=True)
-    # error = model_error(generated_temps, agent_params)
 
     print("Loading results...")
-    res1 = Results("results/errors/[100]_2000.errors")
-    res2 = Results("results/errors/[10-10]_2000.errors")
+    res1 = StateResults("results/states/[1-10-10]_100y_500a.states")
+    # res1 = ErrorResults("results/errors/[100]_100y_2000a.errors")
+    # res2 = ErrorResults("results/errors/[10-10]_100y_2000a.errors")
     print("Done!")
 
-    plot_errors([res1, res2])
+    # plot_errors([res1, res2])
 
+    plot_state_results(res1)
     # plot_simulation()
 
 
@@ -72,6 +71,27 @@ def plot_errors(results):
     plt.ylabel("Model error (ε)")
     plt.title("Model errors of {} agents with random priors".format(len(results[0].model_errors)))
     plt.legend(handles=legend_elements, loc='upper right')
+    plt.show()
+
+
+def plot_state_results(results):
+    layer_count = len(results.LAYER_STATES)
+    fig, axs = plt.subplots(layer_count, 2, figsize=(8, 4*layer_count))
+    for mus, sigmas in results.agent_params:
+        mu_per_layer = [[m[i] for m in mus] for i in range(len(mus[0]))]
+        sigmas_per_layer = [[s[i] for s in sigmas] for i in range(len(sigmas[0]))]
+
+        colors = ['red', 'blue', 'green', 'orange']
+        alpha = 0.1
+
+        if layer_count > 1:
+            for layer in range(layer_count):
+                axs[layer][0].plot(np.arange(results.N_ITER)/results.YEAR_LEN, mu_per_layer[layer], color=colors[layer], alpha=alpha)
+                axs[layer][1].plot(np.arange(results.N_ITER)/results.YEAR_LEN, sigmas_per_layer[layer], color=colors[layer], alpha=alpha)
+        else:
+            axs[0].plot(np.arange(results.N_ITER) / results.YEAR_LEN, mu_per_layer[0], color=colors[0], alpha=alpha)
+            axs[1].plot(np.arange(results.N_ITER) / results.YEAR_LEN, sigmas_per_layer[0], color=colors[0], alpha=alpha)
+
     plt.show()
 
 
@@ -133,8 +153,9 @@ def plot_errors(results):
 #     plt.show()
 
 
-# def plot_states():
-#     params_per_layer = [l for l in zip(*agent_params)]
+# def plot_states(results):
+#     print("Test")
+#     params_per_layer = [l for l in zip(*results)]
 #
 #     for layer, params in enumerate(params_per_layer):
 #         final_params = params[-1]

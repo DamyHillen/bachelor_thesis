@@ -2,8 +2,6 @@ from PerceptiveInferenceAgent import PerceptiveInferenceAgent
 from GenerativeLayer import GenerativeLayer
 from multiprocessing import Pool
 from Simulation import Simulation
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 import numpy as np
 import datetime
 import pickle
@@ -11,7 +9,7 @@ import time
 import os
 
 N_PROCESSES = 10
-N_SIMS = 2000
+N_SIMS = 500
 
 # Process parameters
 HOUR_LEN = 1
@@ -19,10 +17,10 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN*100
+N_ITER = YEAR_LEN * 100
 
 # Agent parameters
-LAYER_STATES = [10, 10]  # Immediately also determines number of layers
+LAYER_STATES = [1, 10, 10]  # Immediately also determines number of layers
 
 
 class Main:
@@ -44,17 +42,15 @@ class Main:
                            layer_states=LAYER_STATES) for s in range(N_SIMS)]
 
         with Pool(processes=N_PROCESSES) as pool:
-            model_errors = pool.map(self.run_sim, sims)
-            # model_errors = pool.map_async(run_sim, sims)
+            sim_results = pool.map(self.run_sim, sims)
 
         # generated_temps = sim.generated_temps
         # predictions = sim.predictions
         # agent_params = sim.agent_params
         print("{:.2f} seconds".format(time.time() - t))
 
-        self.store_model_err(model_errors)
-
-        # Write results to disk (results/dd-mm-yy_hh:mm:ss.txt) # store_results(generated_temps, predictions, agent_params)
+        # self.store_model_err(sim_results)
+        self.store_state_results(sim_results)
 
     @staticmethod
     def run_sim(sim):
@@ -77,14 +73,42 @@ class Main:
         return agent
 
     @staticmethod
-    def store_results(observations, predictions, agent_params):
-        print("Storing results...")
+    def store_single_result(generated_temps, predictions, agent_params, model_errors):
+        print("Storing result...")
 
-        if not os.path.isdir("results"):
-            os.mkdir("results")
+        directory = "results/single/"
+        if not os.path.isdir(directory):
+            os.mkdir(directory)
 
-        file = open(datetime.datetime.now().strftime("results/%d-%m-%y_%H:%M:%S::%f.results"), "wb")
-        pickle.dump((HOUR_LEN, DAY_LEN, YEAR_LEN, N_ITER, LAYER_STATES, observations, predictions, agent_params), file)
+        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.states"), "wb")
+        pickle.dump({"HOUR_LEN": HOUR_LEN,
+                     "DAY_LEN": DAY_LEN,
+                     "YEAR_LEN": YEAR_LEN,
+                     "N_ITER": N_ITER,
+                     "LAYER_STATES": LAYER_STATES,
+                     "generated_temps": generated_temps,
+                     "predictions": predictions,
+                     "agent_params": agent_params,
+                     "model_errors": model_errors}, file)
+        file.close()
+
+        print("Done!")
+
+    @staticmethod
+    def store_state_results(agent_params):
+        print("Storing states...")
+
+        directory = "results/states/"
+        if not os.path.isdir(directory):
+            os.mkdir(directory)
+
+        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.states"), "wb")
+        pickle.dump({"HOUR_LEN": HOUR_LEN,
+                     "DAY_LEN": DAY_LEN,
+                     "YEAR_LEN": YEAR_LEN,
+                     "N_ITER": N_ITER,
+                     "LAYER_STATES": LAYER_STATES,
+                     "agent_params": agent_params}, file)
         file.close()
 
         print("Done!")
@@ -93,11 +117,17 @@ class Main:
     def store_model_err(model_errors):
         print("Storing errors...")
 
-        if not os.path.isdir("results/errors"):
-            os.mkdir("results/errors")
+        directory = "results/errors/"
+        if not os.path.isdir(directory):
+            os.mkdir(directory)
 
-        file = open(datetime.datetime.now().strftime("results/errors/%d-%m-%y_%H:%M:%S::%f.errors"), "wb")
-        pickle.dump((N_ITER, YEAR_LEN, LAYER_STATES, model_errors), file)
+        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.states"), "wb")
+        pickle.dump({"HOUR_LEN": HOUR_LEN,
+                     "DAY_LEN": DAY_LEN,
+                     "YEAR_LEN": YEAR_LEN,
+                     "N_ITER": N_ITER,
+                     "LAYER_STATES": LAYER_STATES,
+                     "model_errors": model_errors}, file)
         file.close()
 
         print("Done!")
