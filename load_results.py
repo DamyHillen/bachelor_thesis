@@ -1,24 +1,21 @@
+from matplotlib.pyplot import Line2D
 import matplotlib.pyplot as plt
+from Results import Results
 import numpy as np
-import pickle
-import sys
+import math
 
-
-# filename = "results/28-05-21_23:54:39::711410.results"
-filename = "results/errors/29-05-21_01:09:23::968642.errors"
-
-print("Loading results from '{}'...".format(filename))
-file = open(sys.argv[0] if len(sys.argv) > 1 else filename, "rb")
-# HOUR_LEN, DAY_LEN, YEAR_LEN, N_ITER, LAYER_STATES, generated_temps, predictions, agent_params = pickle.load(file)
-N_ITER, YEAR_LEN, model_errors = pickle.load(file)
-print("Done!")
 
 
 def main():
     # calculate_and_plot_divergence(separate=True)
     # error = model_error(generated_temps, agent_params)
 
-    plot_errors(model_errors)
+    print("Loading results...")
+    res1 = Results("results/errors/[100]_2000.errors")
+    res2 = Results("results/errors/[10-10]_2000.errors")
+    print("Done!")
+
+    plot_errors([res1, res2])
 
     # plot_simulation()
 
@@ -61,11 +58,20 @@ def main():
 #     return model_error
 
 
-def plot_errors(errors):
-    for error in errors:
-        plt.plot(np.arange(N_ITER)/YEAR_LEN, error, 'r', alpha=0.01)
+def plot_errors(results):
+    colors = ['red', 'blue', 'green', 'orange']
+    legend_elements = [Line2D([0], [0], color=colors[i], label="{}".format(r.LAYER_STATES)) for i, r in enumerate(results)]
+
+    plt.figure(figsize=(8, 6))
+    for i, result in enumerate(results):
+        errors = np.array(result.model_errors).T
+        plt.plot(np.arange(result.N_ITER)/result.YEAR_LEN, errors, colors[i], alpha=0.01)
+        end_max = np.max(errors[-10:, :])
+        plt.text(x=result.N_ITER/result.YEAR_LEN - 30, y=end_max + 4*(i+2), s="{}: ε = {:.2f}".format(result.LAYER_STATES, end_max))
     plt.xlabel("Time (years)")
-    plt.ylabel("Model error")
+    plt.ylabel("Model error (ε)")
+    plt.title("Model errors of {} agents with random priors".format(len(results[0].model_errors)))
+    plt.legend(handles=legend_elements, loc='upper right')
     plt.show()
 
 
