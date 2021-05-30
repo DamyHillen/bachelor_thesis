@@ -1,4 +1,5 @@
-from matplotlib.pyplot import Line2D
+import time
+
 import matplotlib.pyplot as plt
 from Results import *
 import numpy as np
@@ -10,18 +11,19 @@ def main():
     # calculate_and_plot_divergence(separate=True)
 
     print("Loading results...")
-    # res1 = StateResults("results/states/[1-10-10]_60y_1000a.states")
+    t = time.time()
+    res1 = StateResults("results/states/[10-10-1]_150y_1000a.states")
 
     # res1 = ErrorResults("results/errors/[100]_100y_1000a.errors")
     # res2 = ErrorResults("results/errors/[10-10]_100y_1000a.errors")
     # res3 = ErrorResults("results/errors/[1-10-10]_100y_1000a.errors")
 
-    res1 = SingleResult("results/single/[1-10-10]_100y_1a.single")  # TODO: Show prior somehow
-    print("Done!")
+    # res1 = SingleResult("results/single/[1-10-10]_100y_1a.single")  # TODO: Show prior somehow
+    print("Done! ({:.2f} seconds)".format(time.time() - t))
 
     # plot_errors([res1, res2, res3])
-    # plot_state_results(res1)
-    plot_simulation(res1)
+    plot_state_results(res1)
+    # plot_simulation(res1)
 
 
 # def calculate_and_plot_divergence(separate=False):
@@ -73,8 +75,8 @@ def plot_errors(results):
         axs[i].set_ylim((0, max))
 
         end_max = np.max(errors[-10:, :])
+        axs[i].text(x=100, y=end_max + 8, s="ε = {:.2f}".format(end_max))
         axs[i].hlines(y=end_max, xmin=0, xmax=result.N_ITER/result.YEAR_LEN, colors=['black'], zorder=1, linewidths=[2], linestyle='dashed')
-        axs[i].text(x=result.N_ITER/result.YEAR_LEN - 30, y=end_max + 8, s="ε = {:.2f}".format(end_max))
 
         axs[i].set_title("Layer states: {}".format(result.LAYER_STATES))
         axs[i].set_xlabel("Time (years)")
@@ -88,7 +90,17 @@ def plot_state_results(results):
     layer_count = len(results.LAYER_STATES)
     time_vector = np.arange(results.N_ITER)/results.YEAR_LEN
 
-    fig, axs = plt.subplots(3, layer_count + 1, figsize=(3*(layer_count + 1), 9))
+    all_sigs = np.array([params[2] for params in results.agent_params])
+    sig_conv = np.max(np.max(all_sigs[:, -results.YEAR_LEN:, :], axis=0), axis=0)
+    sig_max = np.max(all_sigs)
+    del all_sigs
+
+    all_eqs = np.array([params[1] for params in results.agent_params])
+    eqs_min = np.min(all_eqs)
+    eqs_max = np.max(all_eqs)
+    del all_eqs
+
+    fig, axs = plt.subplots(3, layer_count + 1, figsize=(5*(layer_count + 1), 10))
     eqs_sum_sum = []
     for i, params in enumerate(results.agent_params):
         amps, eqs, sigs = params
@@ -103,9 +115,11 @@ def plot_state_results(results):
 
         if layer_count > 1:
             for layer in range(layer_count):
-                axs[0, layer].plot(time_vector, sigs_per_layer[layer], color=COLORS[layer], alpha=alpha)
+                axs[0, layer].plot(time_vector, sigs_per_layer[layer], color=COLORS[layer], alpha=alpha, zorder=-1)
+                axs[0, layer].set_ylim([0, sig_max])
                 axs[1, layer].plot(time_vector, amps_per_layer[layer], color=COLORS[layer], alpha=alpha)
                 axs[2, layer].plot(time_vector, eqs_per_layer[layer], color=COLORS[layer], alpha=alpha)
+                axs[2, layer].set_ylim([eqs_min, eqs_max])
         else:
             axs[0, 0].plot(time_vector, sigs_per_layer[0], color=COLORS[0], alpha=alpha)
             axs[1, 0].plot(time_vector, amps_per_layer[0], color=COLORS[0], alpha=alpha)
@@ -115,13 +129,15 @@ def plot_state_results(results):
 
     for layer in range(layer_count):
         axs[0, layer].set_title("Standard deviation layer {}".format(layer))
+        axs[0, layer].text(x=100, y=sig_conv[layer] + 10, s="ε = {:.2f}".format(sig_conv[layer]))
+        axs[0, layer].hlines(y=sig_conv[layer], xmin=0, xmax=results.N_ITER / results.YEAR_LEN, colors=['k'], zorder=1)
         axs[1, layer].set_title("Amplitude layer {}".format(layer))
         axs[2, layer].set_title("Equilibrium layer {}".format(layer))
         axs[2, layer_count].set_title("Sum of equilibria")
 
     line_y = np.mean(eqs_sum_sum)
-    axs[2][layer_count].text(x=results.N_ITER / results.YEAR_LEN - 20, y=line_y + 20, s="μ = {:.2f}".format(line_y))
-    axs[2][layer_count].hlines(y=line_y, xmin=0, xmax=results.N_ITER/results.YEAR_LEN, colors='r', zorder=1)
+    axs[2][layer_count].text(x=100, y=line_y + 20, s="μ = {:.2f}".format(line_y))
+    axs[2][layer_count].hlines(y=line_y, xmin=0, xmax=results.N_ITER/results.YEAR_LEN, colors=['r'], zorder=1)
 
     fig.suptitle("Model parameters per layer of {} agents with random priors\nLayer states: {}".format(len(results.agent_params), results.LAYER_STATES))
     plt.tight_layout()

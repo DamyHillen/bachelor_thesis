@@ -4,12 +4,12 @@ from multiprocessing import Pool
 from Simulation import Simulation
 import numpy as np
 import datetime
-import pickle
+import msgpack
 import time
 import os
 
 N_PROCESSES = 10
-N_SIMS = 1
+N_SIMS = 1000
 
 # Process parameters
 HOUR_LEN = 1
@@ -17,10 +17,10 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
-N_ITER = YEAR_LEN * 100
+N_ITER = YEAR_LEN * 150
 
 # Agent parameters
-LAYER_STATES = [1, 10, 10]  # Immediately also determines number of layers
+LAYER_STATES = [10, 1, 10]  # Immediately also determines number of layers
 
 
 class Main:
@@ -50,8 +50,8 @@ class Main:
         print("{:.2f} seconds".format(time.time() - t))
 
         # self.store_model_err(sim_results)
-        # self.store_state_results(sim_results)
-        self.store_single_result(sim_results[0][0], sim_results[0][1], sim_results[0][2], sim_results[0][3])
+        self.store_state_results(sim_results)
+        # self.store_single_result(sim_results[0][0], sim_results[0][1], sim_results[0][2], sim_results[0][3])
 
     @staticmethod
     def run_sim(sim):
@@ -76,62 +76,65 @@ class Main:
     @staticmethod
     def store_single_result(prior, generated_temps, predictions, agent_params):
         print("Storing result...")
+        t = time.time()
 
         directory = "results/single/"
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.single"), "wb")
-        pickle.dump({"HOUR_LEN": HOUR_LEN,
-                     "DAY_LEN": DAY_LEN,
-                     "YEAR_LEN": YEAR_LEN,
-                     "N_ITER": N_ITER,
-                     "LAYER_STATES": LAYER_STATES,
-                     "prior": prior,
-                     "generated_temps": generated_temps,
-                     "predictions": predictions,
-                     "agent_params": agent_params}, file)
-        file.close()
+        with open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.single"), "wb") as file:
+            file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
+                                      "DAY_LEN": DAY_LEN,
+                                      "YEAR_LEN": YEAR_LEN,
+                                      "N_ITER": N_ITER,
+                                      "LAYER_STATES": LAYER_STATES,
+                                      "prior": prior,
+                                      "generated_temps": generated_temps,
+                                      "predictions": predictions,
+                                      "agent_params": agent_params}))
+            file.close()
 
-        print("Done!")
+        print("Done! ({:.2f} seconds)".format(time.time() - t))
 
     @staticmethod
     def store_state_results(agent_params):
         print("Storing states...")
+        t = time.time()
 
         directory = "results/states/"
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.states"), "wb")
-        pickle.dump({"HOUR_LEN": HOUR_LEN,
-                     "DAY_LEN": DAY_LEN,
-                     "YEAR_LEN": YEAR_LEN,
-                     "N_ITER": N_ITER,
-                     "LAYER_STATES": LAYER_STATES,
-                     "agent_params": agent_params}, file)
-        file.close()
+        with open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.states"), "wb") as file:
+            file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
+                                      "DAY_LEN": DAY_LEN,
+                                      "YEAR_LEN": YEAR_LEN,
+                                      "N_ITER": N_ITER,
+                                      "LAYER_STATES": LAYER_STATES,
+                                      "agent_params": agent_params}))
+            file.close()
 
-        print("Done!")
+        print("Done! ({:.2f} seconds)".format(time.time() - t))
 
     @staticmethod
     def store_model_err(model_errors):
         print("Storing errors...")
+        t = time.time()
 
         directory = "results/errors/"
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.errors"), "wb")
-        pickle.dump({"HOUR_LEN": HOUR_LEN,
-                     "DAY_LEN": DAY_LEN,
-                     "YEAR_LEN": YEAR_LEN,
-                     "N_ITER": N_ITER,
-                     "LAYER_STATES": LAYER_STATES,
-                     "model_errors": model_errors}, file)
-        file.close()
+        with open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.errors"), "wb") as file:
+            file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
+                                      "DAY_LEN": DAY_LEN,
+                                      "YEAR_LEN": YEAR_LEN,
+                                      "N_ITER": N_ITER,
+                                      "LAYER_STATES": LAYER_STATES,
+                                      "model_errors": model_errors}))
+            file.close()
 
-        print("Done!")
+        print("Done! ({:.2f} seconds)".format(time.time() - t))
 
 
 if __name__ == "__main__":

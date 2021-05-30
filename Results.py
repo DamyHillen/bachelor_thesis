@@ -1,4 +1,4 @@
-import pickle
+import msgpack
 
 
 class Results:
@@ -11,7 +11,7 @@ class SingleResult(Results):
         if not file_path.split(".")[-1] == "single":
             raise Exception("File does not contain single result!")
         super().__init__(file_path)
-        res = pickle.load(open(self.file_path, "rb"))
+        res = msgpack.unpackb(open(self.file_path, "rb").read())
         self.HOUR_LEN = res["HOUR_LEN"]
         self.DAY_LEN = res["DAY_LEN"]
         self.YEAR_LEN = res["YEAR_LEN"]
@@ -28,7 +28,7 @@ class StateResults(Results):
         if not file_path.split(".")[-1] == "states":
             raise Exception("File does not contain state results!")
         super().__init__(file_path)
-        res = pickle.load(open(self.file_path, "rb"))
+        res = msgpack.unpackb(open(self.file_path, "rb").read())
         self.HOUR_LEN = res["HOUR_LEN"]
         self.DAY_LEN = res["DAY_LEN"]
         self.YEAR_LEN = res["YEAR_LEN"]
@@ -42,7 +42,7 @@ class ErrorResults(Results):
         if not file_path.split(".")[-1] == "errors":
             raise Exception("File does not contain error results!")
         super().__init__(file_path)
-        res = pickle.load(open(self.file_path, "rb"))
+        res = msgpack.unpackb(open(self.file_path, "rb").read())
         self.YEAR_LEN = res["YEAR_LEN"]
         self.N_ITER = res["N_ITER"]
         self.LAYER_STATES = res["LAYER_STATES"]
