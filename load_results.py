@@ -12,18 +12,18 @@ def main():
 
     print("Loading results...")
     t = time.time()
-    res1 = StateResults("results/states/[10-10-1]_150y_1000a.states")
+    # res1 = StateResults("results/states/[10-1]_150y_1000a.states")
 
-    # res1 = ErrorResults("results/errors/[100]_100y_1000a.errors")
-    # res2 = ErrorResults("results/errors/[10-10]_100y_1000a.errors")
-    # res3 = ErrorResults("results/errors/[1-10-10]_100y_1000a.errors")
+    # res1 = ErrorResults("results/errors/[1-1-100]_150y_1000a.errors")
+    # res2 = ErrorResults("results/errors/[1-100-1]_150y_1000a.errors")
+    # res3 = ErrorResults("results/errors/[100-1-1]_150y_1000a.errors")
 
-    # res1 = SingleResult("results/single/[1-10-10]_100y_1a.single")  # TODO: Show prior somehow
+    res1 = SingleResult("results/single/[1-1-100]_150y_1a.single")  # TODO: Show prior somehow
     print("Done! ({:.2f} seconds)".format(time.time() - t))
 
     # plot_errors([res1, res2, res3])
-    plot_state_results(res1)
-    # plot_simulation(res1)
+    # plot_state_results(res1)
+    plot_simulation(res1)
 
 
 # def calculate_and_plot_divergence(separate=False):
@@ -74,7 +74,7 @@ def plot_errors(results):
         axs[i].plot(np.arange(result.N_ITER)/result.YEAR_LEN, errors, COLORS[i], alpha=0.01, zorder=-1)
         axs[i].set_ylim((0, max))
 
-        end_max = np.max(errors[-10:, :])
+        end_max = np.max(errors[-result.YEAR_LEN:, :])
         axs[i].text(x=100, y=end_max + 8, s="ε = {:.2f}".format(end_max))
         axs[i].hlines(y=end_max, xmin=0, xmax=result.N_ITER/result.YEAR_LEN, colors=['black'], zorder=1, linewidths=[2], linestyle='dashed')
 
@@ -151,16 +151,6 @@ def plot_state_results(results):
 #         states.append((t // LAYER_STATES[i-1]) % LAYER_STATES[i])
 #
 #     return [params[t][i][states[i]] for i in range(len(params[t]))]
-
-
-# def KLDiv_normal(params0, params1):
-#     mu0, sigma0 = params0["mu"], params0["sigma"]
-#     mu1, sigma1 = params1["mu"], params1["sigma"]
-#
-#     if sigma0 == 0:
-#         sigma0 = 1
-#
-#     return np.log(sigma1/sigma0) + (np.square(sigma0) + np.square(mu0 - mu1))/(2 * np.square(sigma1)) - 1/2
 
 
 def plot_simulation(results):

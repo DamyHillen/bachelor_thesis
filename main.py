@@ -2,14 +2,14 @@ from PerceptiveInferenceAgent import PerceptiveInferenceAgent
 from GenerativeLayer import GenerativeLayer
 from multiprocessing import Pool
 from Simulation import Simulation
+import re as regex
 import numpy as np
-import datetime
 import msgpack
 import time
 import os
 
 N_PROCESSES = 10
-N_SIMS = 1000
+N_SIMS = 1
 
 # Process parameters
 HOUR_LEN = 1
@@ -17,10 +17,12 @@ DAY_LEN = 10 * HOUR_LEN
 YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
+WITH_WARMING = False
+WITH_YEAR = True
 N_ITER = YEAR_LEN * 150
 
 # Agent parameters
-LAYER_STATES = [10, 1, 10]  # Immediately also determines number of layers
+LAYER_STATES = [100, 1, 1]  # Immediately also determines number of layers
 
 
 class Main:
@@ -28,42 +30,36 @@ class Main:
         pass
 
     def start(self):
-        # Creating the generative process and perceptive inference agent
-        # process = create_process(with_warming=False)
-        # agent = create_agent(prior={"n": 5, "mu": 10, "sigma": 1}, only_mu=False)
         t = time.time()
 
         priors = np.random.uniform(-100, 100, N_SIMS)
 
         sims = [Simulation(id=s,
                            agent=self.create_agent(prior={"n": 5, "mu": priors[s], "sigma": 1}),
-                           process=self.create_process(),
+                           process=self.create_process(with_year=WITH_YEAR, with_warming=WITH_WARMING),
                            n_iter=N_ITER,
                            layer_states=LAYER_STATES) for s in range(N_SIMS)]
 
         with Pool(processes=N_PROCESSES) as pool:
             sim_results = pool.map(self.run_sim, sims)
 
-        # generated_temps = sim.generated_temps
-        # predictions = sim.predictions
-        # agent_params = sim.agent_params
         print("{:.2f} seconds".format(time.time() - t))
 
         # self.store_model_err(sim_results)
-        self.store_state_results(sim_results)
-        # self.store_single_result(sim_results[0][0], sim_results[0][1], sim_results[0][2], sim_results[0][3])
+        # self.store_state_results(sim_results)
+        self.store_single_result(sim_results[0][0], sim_results[0][1], sim_results[0][2], sim_results[0][3])
 
     @staticmethod
     def run_sim(sim):
         return sim.run()
 
     @staticmethod
-    def create_process(with_warming=False):
+    def create_process(with_year=True, with_warming=False):
         warming = GenerativeLayer(cycle_time=0, amplitude=0, equilibrium=10)
         # year = GenerativeLayer(parent=warming if with_warming else None, cycle_time=YEAR_LEN, amplitude=20, sigma=2.5, equilibrium=0 if with_warming else 10)
         year = GenerativeLayer(parent=warming if with_warming else None, cycle_time=YEAR_LEN, amplitude=20, sigma=0, equilibrium=0 if with_warming else 10)
         # day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=1)
-        day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=0)
+        day = GenerativeLayer(parent=year if with_year else None, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=0, equilibrium=0 if with_year else 10)
         # hour = GenerativeLayer(parent=day, cycle_time=HOUR_LEN, amplitude=0, sigma=0.25)
 
         return day
@@ -82,7 +78,7 @@ class Main:
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        with open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.single"), "wb") as file:
+        with open(directory + regex.sub(", ", "-", "{}_{}y_{}a.single".format(LAYER_STATES, N_ITER//YEAR_LEN, N_SIMS)), "wb") as file:
             file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
                                       "DAY_LEN": DAY_LEN,
                                       "YEAR_LEN": YEAR_LEN,
@@ -105,7 +101,7 @@ class Main:
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        with open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.states"), "wb") as file:
+        with open(directory + regex.sub(", ", "-", "{}_{}y_{}a.states".format(LAYER_STATES, N_ITER//YEAR_LEN, N_SIMS)), "wb") as file:
             file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
                                       "DAY_LEN": DAY_LEN,
                                       "YEAR_LEN": YEAR_LEN,
@@ -125,7 +121,7 @@ class Main:
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        with open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.errors"), "wb") as file:
+        with open(directory + regex.sub(", ", "-", "{}_{}y_{}a.errors".format(LAYER_STATES, N_ITER // YEAR_LEN, N_SIMS)), "wb") as file:
             file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
                                       "DAY_LEN": DAY_LEN,
                                       "YEAR_LEN": YEAR_LEN,
