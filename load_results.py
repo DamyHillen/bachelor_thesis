@@ -3,20 +3,25 @@ import matplotlib.pyplot as plt
 from Results import *
 import numpy as np
 
+COLORS = ['tab:red', 'royalblue', 'forestgreen', 'darkorange', 'plum']
+
 
 def main():
     # calculate_and_plot_divergence(separate=True)
 
     print("Loading results...")
-    res1 = StateResults("results/states/[1-10-10]_100y_500a.states")
-    # res1 = ErrorResults("results/errors/[100]_100y_2000a.errors")
-    # res2 = ErrorResults("results/errors/[10-10]_100y_2000a.errors")
+    # res1 = StateResults("results/states/[1-10-10]_60y_1000a.states")
+
+    # res1 = ErrorResults("results/errors/[100]_100y_1000a.errors")
+    # res2 = ErrorResults("results/errors/[10-10]_100y_1000a.errors")
+    # res3 = ErrorResults("results/errors/[1-10-10]_100y_1000a.errors")
+
+    res1 = SingleResult("results/single/[1-10-10]_100y_1a.single")  # TODO: Show prior somehow
     print("Done!")
 
-    # plot_errors([res1, res2])
-
-    plot_state_results(res1)
-    # plot_simulation()
+    # plot_errors([res1, res2, res3])
+    # plot_state_results(res1)
+    plot_simulation(res1)
 
 
 # def calculate_and_plot_divergence(separate=False):
@@ -58,40 +63,68 @@ def main():
 
 
 def plot_errors(results):
-    colors = ['red', 'blue', 'green', 'orange']
-    legend_elements = [Line2D([0], [0], color=colors[i], label="{}".format(r.LAYER_STATES)) for i, r in enumerate(results)]
+    all_errors = np.array([result.model_errors for result in results])
+    max = np.max(all_errors)
 
-    plt.figure(figsize=(8, 6))
+    fig, axs = plt.subplots(1, len(results), figsize=(3 * (len(results) + 1), 6))
     for i, result in enumerate(results):
         errors = np.array(result.model_errors).T
-        plt.plot(np.arange(result.N_ITER)/result.YEAR_LEN, errors, colors[i], alpha=0.01)
+        axs[i].plot(np.arange(result.N_ITER)/result.YEAR_LEN, errors, COLORS[i], alpha=0.01, zorder=-1)
+        axs[i].set_ylim((0, max))
+
         end_max = np.max(errors[-10:, :])
-        plt.text(x=result.N_ITER/result.YEAR_LEN - 30, y=end_max + 4*(i+2), s="{}: ε = {:.2f}".format(result.LAYER_STATES, end_max))
-    plt.xlabel("Time (years)")
-    plt.ylabel("Model error (ε)")
-    plt.title("Model errors of {} agents with random priors".format(len(results[0].model_errors)))
-    plt.legend(handles=legend_elements, loc='upper right')
+        axs[i].hlines(y=end_max, xmin=0, xmax=result.N_ITER/result.YEAR_LEN, colors=['black'], zorder=1, linewidths=[2], linestyle='dashed')
+        axs[i].text(x=result.N_ITER/result.YEAR_LEN - 30, y=end_max + 8, s="ε = {:.2f}".format(end_max))
+
+        axs[i].set_title("Layer states: {}".format(result.LAYER_STATES))
+        axs[i].set_xlabel("Time (years)")
+        axs[i].set_ylabel("Model error (ε)")
+    plt.suptitle("Model errors of {} agents with random priors".format(len(results[0].model_errors)))
+    plt.tight_layout()
     plt.show()
 
 
 def plot_state_results(results):
     layer_count = len(results.LAYER_STATES)
-    fig, axs = plt.subplots(layer_count, 2, figsize=(8, 4*layer_count))
-    for mus, sigmas in results.agent_params:
-        mu_per_layer = [[m[i] for m in mus] for i in range(len(mus[0]))]
-        sigmas_per_layer = [[s[i] for s in sigmas] for i in range(len(sigmas[0]))]
+    time_vector = np.arange(results.N_ITER)/results.YEAR_LEN
 
-        colors = ['red', 'blue', 'green', 'orange']
-        alpha = 0.1
+    fig, axs = plt.subplots(3, layer_count + 1, figsize=(3*(layer_count + 1), 9))
+    eqs_sum_sum = []
+    for i, params in enumerate(results.agent_params):
+        amps, eqs, sigs = params
+        amps_per_layer = [[m[i] for m in amps] for i in range(len(amps[0]))]
+        eqs_per_layer = [[e[i] for e in eqs] for i in range(len(eqs[0]))]
+        sigs_per_layer = [[s[i] for s in sigs] for i in range(len(sigs[0]))]
+
+        eqs_sum = [sum(e) for e in eqs]
+        eqs_sum_sum.append(eqs_sum)
+
+        alpha = 0.01
 
         if layer_count > 1:
             for layer in range(layer_count):
-                axs[layer][0].plot(np.arange(results.N_ITER)/results.YEAR_LEN, mu_per_layer[layer], color=colors[layer], alpha=alpha)
-                axs[layer][1].plot(np.arange(results.N_ITER)/results.YEAR_LEN, sigmas_per_layer[layer], color=colors[layer], alpha=alpha)
+                axs[0, layer].plot(time_vector, sigs_per_layer[layer], color=COLORS[layer], alpha=alpha)
+                axs[1, layer].plot(time_vector, amps_per_layer[layer], color=COLORS[layer], alpha=alpha)
+                axs[2, layer].plot(time_vector, eqs_per_layer[layer], color=COLORS[layer], alpha=alpha)
         else:
-            axs[0].plot(np.arange(results.N_ITER) / results.YEAR_LEN, mu_per_layer[0], color=colors[0], alpha=alpha)
-            axs[1].plot(np.arange(results.N_ITER) / results.YEAR_LEN, sigmas_per_layer[0], color=colors[0], alpha=alpha)
+            axs[0, 0].plot(time_vector, sigs_per_layer[0], color=COLORS[0], alpha=alpha)
+            axs[1, 0].plot(time_vector, amps_per_layer[0], color=COLORS[0], alpha=alpha)
+            axs[2, 0].plot(time_vector, eqs_per_layer[0], color=COLORS[0], alpha=alpha)
 
+        axs[2][layer_count].plot(time_vector, eqs_sum, color='k', alpha=alpha, zorder=-1)
+
+    for layer in range(layer_count):
+        axs[0, layer].set_title("Standard deviation layer {}".format(layer))
+        axs[1, layer].set_title("Amplitude layer {}".format(layer))
+        axs[2, layer].set_title("Equilibrium layer {}".format(layer))
+        axs[2, layer_count].set_title("Sum of equilibria")
+
+    line_y = np.mean(eqs_sum_sum)
+    axs[2][layer_count].text(x=results.N_ITER / results.YEAR_LEN - 20, y=line_y + 20, s="μ = {:.2f}".format(line_y))
+    axs[2][layer_count].hlines(y=line_y, xmin=0, xmax=results.N_ITER/results.YEAR_LEN, colors='r', zorder=1)
+
+    fig.suptitle("Model parameters per layer of {} agents with random priors\nLayer states: {}".format(len(results.agent_params), results.LAYER_STATES))
+    plt.tight_layout()
     plt.show()
 
 
@@ -114,96 +147,95 @@ def plot_state_results(results):
 #     return np.log(sigma1/sigma0) + (np.square(sigma0) + np.square(mu0 - mu1))/(2 * np.square(sigma1)) - 1/2
 
 
-# def plot_simulation():
-#     print("Generating plots...")
-#
-#     observations = [o[0][0]["value"] for o in generated_temps]
-#
-#     # Plotting the first year of generated and predicted temperatures
-#     year_time = list(range(YEAR_LEN))
-#     plot_temperatures(year_time,
-#                       observations[:YEAR_LEN], "observations",
-#                       predictions[:YEAR_LEN], "predictions",
-#                       "First year generated VS predicted temperatures",
-#                       func="scatter")
-#
-#     # Plotting the last year of generated and predicted temperatures
-#     plot_temperatures(year_time,
-#                       observations[-YEAR_LEN:], "observations",
-#                       predictions[-YEAR_LEN:], "predictions",
-#                       "Last year generated VS predicted temperatures",
-#                       func="scatter")
-#
-#     plot_states()
-#
-#     print("Done!")
+def plot_simulation(results):
+    print("Generating plots...")
+
+    observations = [o[0][0]["value"] for o in results.generated_temps]
+
+    # Plotting the first year of generated and predicted temperatures
+    year_time = list(range(results.YEAR_LEN))
+    plot_temperatures(year_time,
+                      observations[:results.YEAR_LEN], "observations",
+                      results.predictions[:results.YEAR_LEN], "predictions",
+                      "First year generated VS predicted temperatures",
+                      func="scatter")
+
+    # Plotting the last year of generated and predicted temperatures
+    plot_temperatures(year_time,
+                      observations[-results.YEAR_LEN:], "observations",
+                      results.predictions[-results.YEAR_LEN:], "predictions",
+                      "Last year generated VS predicted temperatures",
+                      func="scatter")
+
+    plot_states(results)
+
+    print("Done!")
 
 
-# def plot_temperatures(time, obs, obs_label, pred, pred_label, title, func="scatter"):
-#     if func == "scatter":
-#         plt.scatter(time, obs, color='k', s=10, label=obs_label)
-#         plt.scatter(time, pred, color='r', s=10, label=pred_label)
-#     else:
-#         plt.plot(time, obs, color='k', label=obs_label)
-#         plt.plot(time, pred, color='r', label=pred_label)
-#     plt.title(title)
-#     plt.xlabel("Time (iterations)")
-#     plt.ylabel("Temperature value")
-#     plt.legend()
-#     plt.show()
+def plot_temperatures(time, obs, obs_label, pred, pred_label, title, func="scatter"):
+    if func == "scatter":
+        plt.scatter(time, obs, color='k', s=10, label=obs_label)
+        plt.scatter(time, pred, color='r', s=10, label=pred_label)
+    else:
+        plt.plot(time, obs, color='k', label=obs_label)
+        plt.plot(time, pred, color='r', label=pred_label)
+    plt.title(title)
+    plt.xlabel("Time (iterations)")
+    plt.ylabel("Temperature value")
+    plt.legend()
+    plt.show()
 
 
-# def plot_states(results):
-#     print("Test")
-#     params_per_layer = [l for l in zip(*results)]
-#
-#     for layer, params in enumerate(params_per_layer):
-#         final_params = params[-1]
-#
-#         if len(final_params) < 25:
-#             distributions = [np.random.normal(loc=p["mu"], scale=p["sigma"], size=10000) for p in final_params]
-#             lower = min([min(dist) for dist in distributions])
-#             upper = max([max(dist) for dist in distributions])
-#             if len(final_params) > 1:
-#                 fig, axs = plt.subplots(1, len(final_params), figsize=(10, 5))
-#
-#                 for state, state_params in enumerate(final_params):
-#                     axs[state].hist(distributions[state],
-#                                     orientation="horizontal",
-#                                     density=True,
-#                                     color='k',
-#                                     bins=30,
-#                                     range=(lower, upper))
-#                     axs[state].set_title("State {}\nμ = {:.1f}\nσ = {:.1f}".format(state, state_params["mu"], state_params["sigma"]))
-#                     axs[state].axhline(distributions[state].mean(), color='r')
-#                 fig.supxlabel("Probability")
-#                 fig.supylabel("Value")
-#                 mus = [p["mu"] for p in final_params]
-#                 fig.suptitle("State parameters for layer {}\nequilibrium = {:.1f}, amplitude = {:.1f}".format(layer, sum(mus)/len(final_params), (max(mus) - min(mus))/2))
-#             else:
-#                 plt.hist(distributions[0],
-#                          orientation="horizontal",
-#                          density=True,
-#                          color='k',
-#                          bins=30,
-#                          range=(lower, upper))
-#                 plt.axhline(distributions[0].mean(), color='r')
-#                 plt.xlabel("Probability")
-#                 plt.ylabel("Value")
-#                 plt.title("State parameters for layer {}\nState: μ = {:.1f},\nσ = {:.1f}"
-#                           .format(layer, final_params[0]["mu"], final_params[0]["sigma"]))
-#         else:
-#             xs = range(len(final_params))
-#             ys, es = zip(*[(p["mu"], p["sigma"]) for p in final_params])
-#
-#             err = plt.errorbar(xs, ys, yerr=es, color='k')
-#             err[-1][0].set_linestyle("dotted")
-#             plt.xlabel("State")
-#             plt.ylabel("Value")
-#             plt.title("State parameters for layer {} with ±σ as error bars".format(layer))
-#
-#         plt.tight_layout()
-#         plt.show()
+def plot_states(results):
+    params_per_layer = [l for l in zip(*results.agent_params)]
+
+    for layer, params in enumerate(params_per_layer):
+        final_params = params[-1]
+
+        if len(final_params) < 25:
+            distributions = [np.random.normal(loc=p["mu"], scale=p["sigma"], size=10000) for p in final_params]
+            lower = min([min(dist) for dist in distributions])
+            upper = max([max(dist) for dist in distributions])
+            if len(final_params) > 1:
+                fig, axs = plt.subplots(1, len(final_params), figsize=(10, 5))
+
+                for state, state_params in enumerate(final_params):
+                    axs[state].hist(distributions[state],
+                                    orientation="horizontal",
+                                    density=True,
+                                    color='k',
+                                    bins=30,
+                                    range=(lower, upper))
+                    axs[state].set_title("State {}\nμ = {:.1f}\nσ = {:.1f}".format(state, state_params["mu"], state_params["sigma"]))
+                    axs[state].axhline(distributions[state].mean(), color='r')
+                fig.supxlabel("Probability")
+                fig.supylabel("Value")
+                mus = [p["mu"] for p in final_params]
+                fig.suptitle("State parameters for layer {}\nequilibrium = {:.1f}, amplitude = {:.1f}".format(layer, sum(mus)/len(final_params), (max(mus) - min(mus))/2))
+            else:
+                plt.hist(distributions[0],
+                         orientation="horizontal",
+                         density=True,
+                         color='k',
+                         bins=30,
+                         range=(lower, upper))
+                plt.axhline(distributions[0].mean(), color='r')
+                plt.xlabel("Probability")
+                plt.ylabel("Value")
+                plt.title("State parameters for layer {}\nState: μ = {:.1f},\nσ = {:.1f}"
+                          .format(layer, final_params[0]["mu"], final_params[0]["sigma"]))
+        else:
+            xs = range(len(final_params))
+            ys, es = zip(*[(p["mu"], p["sigma"]) for p in final_params])
+
+            err = plt.errorbar(xs, ys, yerr=es, color='k')
+            err[-1][0].set_linestyle("dotted")
+            plt.xlabel("State")
+            plt.ylabel("Value")
+            plt.title("State parameters for layer {} with ±σ as error bars".format(layer))
+
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":

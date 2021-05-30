@@ -4,6 +4,7 @@ import numpy as np
 class PerceptiveInferenceAgent:
     def __init__(self, layer_states, prior=None, only_mu=False):
         self.model = ModelLayer(layer_states=layer_states, prior=prior)
+        self.prior = prior.copy()
         self.only_mu = only_mu
 
     def update(self, obs, layer_contributions):

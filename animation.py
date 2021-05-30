@@ -146,10 +146,10 @@ class SubplotAnimation(animation.TimedAnimation):
 
 
 vid_name = "vid5.mp4"
-if not os.path.isfile('results/image_results/{}'.format(vid_name)):
+if not os.path.isfile('results/videos/{}'.format(vid_name)):
     print("Rendering animation...", file=sys.stderr)
     ani = SubplotAnimation()
-    ani.save('results/image_results/{}'.format(vid_name))
+    ani.save('results/videos/{}'.format(vid_name))
     print("Animation {} saved!".format(vid_name), file=sys.stderr)
 else:
     print("{} already exists!".format(vid_name), file=sys.stderr)

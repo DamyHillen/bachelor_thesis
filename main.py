@@ -9,7 +9,7 @@ import time
 import os
 
 N_PROCESSES = 10
-N_SIMS = 500
+N_SIMS = 1
 
 # Process parameters
 HOUR_LEN = 1
@@ -50,7 +50,8 @@ class Main:
         print("{:.2f} seconds".format(time.time() - t))
 
         # self.store_model_err(sim_results)
-        self.store_state_results(sim_results)
+        # self.store_state_results(sim_results)
+        self.store_single_result(sim_results[0][0], sim_results[0][1], sim_results[0][2], sim_results[0][3])
 
     @staticmethod
     def run_sim(sim):
@@ -73,23 +74,23 @@ class Main:
         return agent
 
     @staticmethod
-    def store_single_result(generated_temps, predictions, agent_params, model_errors):
+    def store_single_result(prior, generated_temps, predictions, agent_params):
         print("Storing result...")
 
         directory = "results/single/"
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.states"), "wb")
+        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.single"), "wb")
         pickle.dump({"HOUR_LEN": HOUR_LEN,
                      "DAY_LEN": DAY_LEN,
                      "YEAR_LEN": YEAR_LEN,
                      "N_ITER": N_ITER,
                      "LAYER_STATES": LAYER_STATES,
+                     "prior": prior,
                      "generated_temps": generated_temps,
                      "predictions": predictions,
-                     "agent_params": agent_params,
-                     "model_errors": model_errors}, file)
+                     "agent_params": agent_params}, file)
         file.close()
 
         print("Done!")
@@ -121,7 +122,7 @@ class Main:
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.states"), "wb")
+        file = open(directory + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S::%f.errors"), "wb")
         pickle.dump({"HOUR_LEN": HOUR_LEN,
                      "DAY_LEN": DAY_LEN,
                      "YEAR_LEN": YEAR_LEN,

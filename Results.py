@@ -17,6 +17,9 @@ class SingleResult(Results):
         self.YEAR_LEN = res["YEAR_LEN"]
         self.N_ITER = res["N_ITER"]
         self.LAYER_STATES = res["LAYER_STATES"]
+        self.prior = res["prior"]
+        self.generated_temps = res["generated_temps"]
+        self.predictions = res["predictions"]
         self.agent_params = res["agent_params"]
 
 
