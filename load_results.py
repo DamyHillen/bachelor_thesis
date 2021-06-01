@@ -12,13 +12,13 @@ def main():
 
     print("Loading results...")
     t = time.time()
-    # res1 = StateResults("results/states/[10-1]_150y_1000a.states")
+    # res1 = StateResults("results/states/[20-10]_150y_1000a_mu.states")
 
-    # res1 = ErrorResults("results/errors/[1-1-100]_150y_1000a.errors")
-    # res2 = ErrorResults("results/errors/[1-100-1]_150y_1000a.errors")
-    # res3 = ErrorResults("results/errors/[100-1-1]_150y_1000a.errors")
+    # res1 = ErrorResults("results/errors/[10-10]_150y_1000a_mu.errors")
+    # res2 = ErrorResults("results/errors/[20-10]_150y_1000a_mu.errors")
+    # res3 = ErrorResults("results/errors/[10-20]_150y_1000a_mu.errors")
 
-    res1 = SingleResult("results/single/[1-1-100]_150y_1a.single")  # TODO: Show prior somehow
+    res1 = SingleResult("results/single/[10-20]_150y_1a_mu.single")  # TODO: Show prior somehow
     print("Done! ({:.2f} seconds)".format(time.time() - t))
 
     # plot_errors([res1, res2, res3])
@@ -76,11 +76,12 @@ def plot_errors(results):
 
         end_max = np.max(errors[-result.YEAR_LEN:, :])
         axs[i].text(x=100, y=end_max + 8, s="ε = {:.2f}".format(end_max))
-        axs[i].hlines(y=end_max, xmin=0, xmax=result.N_ITER/result.YEAR_LEN, colors=['black'], zorder=1, linewidths=[2], linestyle='dashed')
+        axs[i].hlines(y=end_max, xmin=0, xmax=result.N_ITER/result.YEAR_LEN, colors=['black'], zorder=1, linewidths=[2], linestyle='dashed', label="Max resulting error")
 
         axs[i].set_title("Layer states: {}".format(result.LAYER_STATES))
         axs[i].set_xlabel("Time (years)")
         axs[i].set_ylabel("Model error (ε)")
+        axs[i].legend(loc="upper right")
     plt.suptitle("Model errors of {} agents with random priors".format(len(results[0].model_errors)))
     plt.tight_layout()
     plt.show()
@@ -91,7 +92,7 @@ def plot_state_results(results):
     time_vector = np.arange(results.N_ITER)/results.YEAR_LEN
 
     all_sigs = np.array([params[2] for params in results.agent_params])
-    sig_conv = np.max(np.max(all_sigs[:, -results.YEAR_LEN:, :], axis=0), axis=0)
+    sig_conv = np.max(np.max(all_sigs[:, -2*results.YEAR_LEN:, :], axis=0), axis=0)
     sig_max = np.max(all_sigs)
     del all_sigs
 
@@ -125,19 +126,27 @@ def plot_state_results(results):
             axs[1, 0].plot(time_vector, amps_per_layer[0], color=COLORS[0], alpha=alpha)
             axs[2, 0].plot(time_vector, eqs_per_layer[0], color=COLORS[0], alpha=alpha)
 
-        axs[2][layer_count].plot(time_vector, eqs_sum, color='k', alpha=alpha, zorder=-1)
+        axs[2, layer_count].plot(time_vector, eqs_sum, color='k', alpha=alpha, zorder=-1)
 
     for layer in range(layer_count):
         axs[0, layer].set_title("Standard deviation layer {}".format(layer))
-        axs[0, layer].text(x=100, y=sig_conv[layer] + 10, s="ε = {:.2f}".format(sig_conv[layer]))
-        axs[0, layer].hlines(y=sig_conv[layer], xmin=0, xmax=results.N_ITER / results.YEAR_LEN, colors=['k'], zorder=1)
+        axs[0, layer].text(x=135, y=sig_conv[layer] + 5, s="{:.2f}".format(sig_conv[layer]))
+        axs[0, layer].hlines(y=sig_conv[layer], xmin=0, xmax=results.N_ITER / results.YEAR_LEN, colors=['k'], zorder=1, label="Max resulting standard deviation")
+        axs[0, layer].set_xlabel("Time (years)")
+        axs[0, layer].set_ylabel("Standard deviation")
+        axs[0, layer].legend(loc="upper right")
         axs[1, layer].set_title("Amplitude layer {}".format(layer))
+        axs[1, layer].set_xlabel("Time (years)")
+        axs[1, layer].set_ylabel("Amplitude")
         axs[2, layer].set_title("Equilibrium layer {}".format(layer))
         axs[2, layer_count].set_title("Sum of equilibria")
+        axs[2, layer_count].set_xlabel("Time (years)")
+        axs[2, layer_count].set_ylabel("Equilibrium")
 
     line_y = np.mean(eqs_sum_sum)
-    axs[2][layer_count].text(x=100, y=line_y + 20, s="μ = {:.2f}".format(line_y))
-    axs[2][layer_count].hlines(y=line_y, xmin=0, xmax=results.N_ITER/results.YEAR_LEN, colors=['r'], zorder=1)
+    axs[2, layer_count].text(x=135, y=line_y + 10, s="{:.2f}".format(line_y))
+    axs[2, layer_count].hlines(y=line_y, xmin=0, xmax=results.N_ITER/results.YEAR_LEN, colors=['r'], zorder=1, label="Mean sum of equilibria")
+    axs[2, layer_count].legend(loc="upper right")
 
     fig.suptitle("Model parameters per layer of {} agents with random priors\nLayer states: {}".format(len(results.agent_params), results.LAYER_STATES))
     plt.tight_layout()
@@ -163,15 +172,15 @@ def plot_simulation(results):
     plot_temperatures(year_time,
                       observations[:results.YEAR_LEN], "observations",
                       results.predictions[:results.YEAR_LEN], "predictions",
-                      "First year generated VS predicted temperatures",
-                      func="scatter")
+                      "First year generated VS predicted temperatures\nLayer states: {}".format(results.LAYER_STATES),
+                      func="plot")
 
     # Plotting the last year of generated and predicted temperatures
     plot_temperatures(year_time,
                       observations[-results.YEAR_LEN:], "observations",
                       results.predictions[-results.YEAR_LEN:], "predictions",
-                      "Last year generated VS predicted temperatures",
-                      func="scatter")
+                      "Last year generated VS predicted temperatures\nLayer states: {}".format(results.LAYER_STATES),
+                      func="plot")
 
     plot_states(results)
 
@@ -179,6 +188,7 @@ def plot_simulation(results):
 
 
 def plot_temperatures(time, obs, obs_label, pred, pred_label, title, func="scatter"):
+    plt.figure(figsize=(8, 4))
     if func == "scatter":
         plt.scatter(time, obs, color='k', s=10, label=obs_label)
         plt.scatter(time, pred, color='r', s=10, label=pred_label)
@@ -198,7 +208,7 @@ def plot_states(results):
     for layer, params in enumerate(params_per_layer):
         final_params = params[-1]
 
-        if len(final_params) < 25:
+        if len(final_params) < 15:
             distributions = [np.random.normal(loc=p["mu"], scale=p["sigma"], size=10000) for p in final_params]
             lower = min([min(dist) for dist in distributions])
             upper = max([max(dist) for dist in distributions])
@@ -238,7 +248,7 @@ def plot_states(results):
             err[-1][0].set_linestyle("dotted")
             plt.xlabel("State")
             plt.ylabel("Value")
-            plt.title("State parameters for layer {} with ±σ as error bars".format(layer))
+            plt.title("State parameters for layer {} with ±σ as error bars\nequilibrium = {:.1f}, amplitude = {:.1f}".format(layer, sum(ys)/len(ys), (max(ys) - min(ys))/2))
 
         plt.tight_layout()
         plt.show()

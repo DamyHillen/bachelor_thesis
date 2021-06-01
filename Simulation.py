@@ -15,9 +15,9 @@ class Simulation:
         self.predictions = []
         self.agent_params = []
 
-        # self.eqs = []
-        # self.amps = []
-        # self.sigmas = []
+        self.eqs = []
+        self.amps = []
+        self.sigmas = []
 
         self.model_errors = []
 
@@ -26,7 +26,6 @@ class Simulation:
 
         # Simulation loop
         for t in range(self.n_iter):
-
             generated_temp = self.process.sample(t)
             prediction = self.agent.predict()
             self.agent.update(generated_temp[0][0]["value"], prediction["layer_contributions"])

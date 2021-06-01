@@ -45,7 +45,7 @@ class ModelLayer:
 
         # Incrementally update average and standard deviation
         self.state_variables[self.in_state]["mu"] = old_mu + (should_have_been - old_mu) / n
-        self.state_variables[self.in_state]["sigma"] = np.sqrt(((n-2)/(n-1)) * np.power(old_sigma, 2) + np.power((should_have_been- old_mu), 2) / n)
+        self.state_variables[self.in_state]["sigma"] = np.sqrt(((n - 2) / (n - 1)) * np.power(old_sigma, 2) + np.power((should_have_been - self.state_variables[self.in_state]["mu"]), 2) / n)
 
         if self.parent:
             self.parent.update(obs-self.state_variables[self.in_state]["mu"], layer_contributions[1:])

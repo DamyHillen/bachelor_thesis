@@ -22,7 +22,8 @@ WITH_YEAR = True
 N_ITER = YEAR_LEN * 150
 
 # Agent parameters
-LAYER_STATES = [100, 1, 1]  # Immediately also determines number of layers
+ONLY_MU = True
+LAYER_STATES = [20,10]  # Immediately also determines number of layers
 
 
 class Main:
@@ -33,9 +34,10 @@ class Main:
         t = time.time()
 
         priors = np.random.uniform(-100, 100, N_SIMS)
+        priors = [0]
 
         sims = [Simulation(id=s,
-                           agent=self.create_agent(prior={"n": 5, "mu": priors[s], "sigma": 1}),
+                           agent=self.create_agent(prior={"n": 3, "mu": priors[s], "sigma": 1}, only_mu=ONLY_MU),
                            process=self.create_process(with_year=WITH_YEAR, with_warming=WITH_WARMING),
                            n_iter=N_ITER,
                            layer_states=LAYER_STATES) for s in range(N_SIMS)]
@@ -56,11 +58,8 @@ class Main:
     @staticmethod
     def create_process(with_year=True, with_warming=False):
         warming = GenerativeLayer(cycle_time=0, amplitude=0, equilibrium=10)
-        # year = GenerativeLayer(parent=warming if with_warming else None, cycle_time=YEAR_LEN, amplitude=20, sigma=2.5, equilibrium=0 if with_warming else 10)
         year = GenerativeLayer(parent=warming if with_warming else None, cycle_time=YEAR_LEN, amplitude=20, sigma=0, equilibrium=0 if with_warming else 10)
-        # day = GenerativeLayer(parent=year, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=1)
         day = GenerativeLayer(parent=year if with_year else None, cycle_time=DAY_LEN, offset=-DAY_LEN / 4, amplitude=10, sigma=0, equilibrium=0 if with_year else 10)
-        # hour = GenerativeLayer(parent=day, cycle_time=HOUR_LEN, amplitude=0, sigma=0.25)
 
         return day
 
@@ -78,7 +77,8 @@ class Main:
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        with open(directory + regex.sub(", ", "-", "{}_{}y_{}a.single".format(LAYER_STATES, N_ITER//YEAR_LEN, N_SIMS)), "wb") as file:
+        filename = directory + regex.sub(", ", "-", "{}_{}y_{}a{}.single".format(LAYER_STATES, N_ITER//YEAR_LEN, N_SIMS, "_mu" if ONLY_MU else ""))
+        with open(filename, "wb") as file:
             file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
                                       "DAY_LEN": DAY_LEN,
                                       "YEAR_LEN": YEAR_LEN,
@@ -90,6 +90,7 @@ class Main:
                                       "agent_params": agent_params}))
             file.close()
 
+        print("Written to {}".format(filename))
         print("Done! ({:.2f} seconds)".format(time.time() - t))
 
     @staticmethod
@@ -101,7 +102,8 @@ class Main:
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        with open(directory + regex.sub(", ", "-", "{}_{}y_{}a.states".format(LAYER_STATES, N_ITER//YEAR_LEN, N_SIMS)), "wb") as file:
+        filename = directory + regex.sub(", ", "-", "{}_{}y_{}a{}.states".format(LAYER_STATES, N_ITER//YEAR_LEN, N_SIMS, "_mu" if ONLY_MU else ""))
+        with open(filename, "wb") as file:
             file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
                                       "DAY_LEN": DAY_LEN,
                                       "YEAR_LEN": YEAR_LEN,
@@ -110,6 +112,7 @@ class Main:
                                       "agent_params": agent_params}))
             file.close()
 
+        print("Written to {}".format(filename))
         print("Done! ({:.2f} seconds)".format(time.time() - t))
 
     @staticmethod
@@ -121,7 +124,8 @@ class Main:
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
-        with open(directory + regex.sub(", ", "-", "{}_{}y_{}a.errors".format(LAYER_STATES, N_ITER // YEAR_LEN, N_SIMS)), "wb") as file:
+        filename = directory + regex.sub(", ", "-", "{}_{}y_{}a{}.errors".format(LAYER_STATES, N_ITER // YEAR_LEN, N_SIMS, "_mu" if ONLY_MU else ""))
+        with open(filename, "wb") as file:
             file.write(msgpack.packb({"HOUR_LEN": HOUR_LEN,
                                       "DAY_LEN": DAY_LEN,
                                       "YEAR_LEN": YEAR_LEN,
@@ -130,6 +134,7 @@ class Main:
                                       "model_errors": model_errors}))
             file.close()
 
+        print("Written to {}".format(filename))
         print("Done! ({:.2f} seconds)".format(time.time() - t))
 
 
