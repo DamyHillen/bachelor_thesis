@@ -18,12 +18,12 @@ YEAR_LEN = 10 * DAY_LEN
 
 # Simulation parameters
 WITH_WARMING = False
-WITH_YEAR = True
+WITH_YEAR = False
 N_ITER = YEAR_LEN * 150
 
 # Agent parameters
 ONLY_MU = True
-LAYER_STATES = [20,10]  # Immediately also determines number of layers
+LAYER_STATES = [11]  # Immediately also determines number of layers
 
 
 class Main:
