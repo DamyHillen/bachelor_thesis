@@ -18,7 +18,7 @@ def main():
     # res2 = ErrorResults("results/errors/[20-10]_150y_1000a_mu.errors")
     # res3 = ErrorResults("results/errors/[10-20]_150y_1000a_mu.errors")
 
-    res1 = SingleResult("results/single/[11]_150y_1a_mu.single")  # TODO: Show prior somehow
+    res1 = SingleResult("results/single/[5]_150y_1a_mu.single")  # TODO: Show prior somehow
     print("Done! ({:.2f} seconds)".format(time.time() - t))
 
     # plot_errors([res1])
